@@ -44,6 +44,7 @@
     "url": "https://opencollective.com/openlayers"
   },
   "dependencies": {
+    "@maplat/tin": "^0.9.4",
     "earcut": "^2.2.3",
     "geotiff": "^2.0.7",
     "ol-mapbox-style": "^10.1.0",
