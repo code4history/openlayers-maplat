@@ -1,4 +1,3 @@
-
 function iconSelector(data) {
   const type = data.get("type");
   const title = data.get("title");

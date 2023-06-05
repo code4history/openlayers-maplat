@@ -21,7 +21,7 @@ const vectorReq = await fetch("https://raw.githubusercontent.com/code4history/Ta
 const vectorJSON = await vectorReq.json();
 const vectorSource = new VectorSource({
   features: new FormatGeoJSON().readFeatures(vectorJSON, {
-    featureProjection: maplat2Project,
+    featureProjection: "EPSG:4326",
     dataProjection: "EPSG:4326"
   })
 });
