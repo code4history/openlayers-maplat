@@ -2,9 +2,6 @@
  * @module ol/maplat/clusterRegister
  */
 import Feature from '../Feature.js';
-import GeoJSON from '../format/GeoJSON.js';
-import Map from '../Map.js';
-import View from '../View.js';
 import {
   Circle as CircleStyle,
   Fill,
@@ -13,14 +10,19 @@ import {
   Style,
   Text,
 } from '../style.js';
-import {Cluster, Vector as VectorSource, XYZ} from '../source.js';
+import {Cluster} from '../source.js';
 import {LineString, Point, Polygon} from '../geom.js';
-import {Tile as TileLayer, Vector as VectorLayer} from '../layer.js';
+import {Vector as VectorLayer} from '../layer.js';
 import {createEmpty, extend, getHeight, getWidth} from '../extent.js';
-import {fromLonLat} from '../proj.js';
 import monotoneChainConvexHull from 'monotone-chain-convex-hull';
+import LayerGroup from '../layer/Group.js';
 
-export default function vectorFilter(source, map) {
+class clusterRegister extends LayerGroup {
+  constructor(options) {
+    super(options);
+  }
+
+  registerMap(source, map, callback) {
     const circleDistanceMultiplier = 1;
     const circleFootSeparation = 28;
     const circleStartAngle = Math.PI / 2;
@@ -184,11 +186,6 @@ export default function vectorFilter(source, map) {
       return clusterMemberStyle(originalFeature);
     }
     
-    /*const vectorSource = new VectorSource({
-      format: new GeoJSON(),
-      url: 'data/geojson/photovoltaic.json',
-    });*/
-    
     const clusterSource = new Cluster({
       attributions:
         'Data: <a href="https://www.data.gv.at/auftritte/?organisation=stadt-wien">Stadt Wien</a>',
@@ -214,31 +211,11 @@ export default function vectorFilter(source, map) {
       style: clusterCircleStyle,
     });
     
-    /*const raster = new TileLayer({
-      source: new XYZ({
-        attributions:
-          'Base map: <a target="_blank" href="https://basemap.at/">basemap.at</a>',
-        url: 'https://maps{1-4}.wien.gv.at/basemap/bmapgrau/normal/google3857/{z}/{y}/{x}.png',
-      }),
-    });
-    
-    const map = new Map({
-      layers: [raster, clusterHulls, clusters, clusterCircles],
-      target: 'map',
-      view: new View({
-        center: [0, 0],
-        zoom: 2,
-        maxZoom: 19,
-        extent: [
-          ...fromLonLat([16.1793, 48.1124]),
-          ...fromLonLat([16.5559, 48.313]),
-        ],
-        showFullExtent: true,
-      }),
-    });*/
-    clusterHulls.setMap(map);
-    clusters.setMap(map);
-    clusterCircles.setMap(map);
+    const groupLayer = this;//new LayerGroup({});
+    groupLayer.getLayers().push(clusterHulls);
+    groupLayer.getLayers().push(clusters);
+    groupLayer.getLayers().push(clusterCircles);
+    //map.getLayers().push(groupLayer);
     
     map.on('pointermove', (event) => {
       clusters.getFeatures(event.pixel).then((features) => {
@@ -283,4 +260,7 @@ export default function vectorFilter(source, map) {
         }
       });
     });
+  }
 }
+
+export default clusterRegister;

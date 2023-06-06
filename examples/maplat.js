@@ -57,10 +57,8 @@ const stockIconStyle = (clusterMember) => {
   });;
 };
 
-/*const clusterLayer = new ClusterLayer({
-  source: filteredSource,
-  eachIconGenerator: stockIconStyle
-});*/
+const clusterLayer = new clusterRegister({
+});
 const map = new Map({
   target : 'map',
   layers: [
@@ -72,20 +70,20 @@ const map = new Map({
       source: filteredSource,
       style: stockIconStyle
     })*/
-    //clusterLayer
+    clusterLayer
   ],
   view: new View({
     center: transform(centerLngLat,"EPSG:4326", maplatSource.getProjection()),
     projection: maplatSource.getProjection(),
     constrainRotation: false,
-    zoom: 2
+    zoom: 2,
+    maxZoom: 6
   }),
   interactions: defaults({altShiftDragRotate: false}).extend([
     new DragRotate({condition: altKeyOnly})
   ])
 });
-//clusterLayer.registerMap(map);
-clusterRegister(filteredSource, map);
+clusterLayer.registerMap(filteredSource, map);
 
 document.getElementById('zoom-out').onclick = function () {
   const view = map.getView();
