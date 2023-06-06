@@ -11,6 +11,8 @@ import FormatGeoJSON from '../src/ol/format/GeoJSON.js';
 import VectorLayer from '../src/ol/layer/Vector.js';
 import { Style, Icon } from '../src/ol/style.js';
 import vectorFilter from '../src/ol/maplat/vectorFilter.js';
+import ClusterLayer from '../src/ol/maplat/ClusterLayer.js';
+import clusterRegister from '../src/ol/maplat/clusterRegister.js';
 
 const centerLngLat = [139.536710, 36.246680];
 
@@ -55,6 +57,10 @@ const stockIconStyle = (clusterMember) => {
   });;
 };
 
+/*const clusterLayer = new ClusterLayer({
+  source: filteredSource,
+  eachIconGenerator: stockIconStyle
+});*/
 const map = new Map({
   target : 'map',
   layers: [
@@ -62,10 +68,11 @@ const map = new Map({
       title: "館林御城図",
       source: maplatSource
     }),
-    new VectorLayer({
+    /*new VectorLayer({
       source: filteredSource,
       style: stockIconStyle
-    })
+    })*/
+    //clusterLayer
   ],
   view: new View({
     center: transform(centerLngLat,"EPSG:4326", maplatSource.getProjection()),
@@ -77,6 +84,8 @@ const map = new Map({
     new DragRotate({condition: altKeyOnly})
   ])
 });
+//clusterLayer.registerMap(map);
+clusterRegister(filteredSource, map);
 
 document.getElementById('zoom-out').onclick = function () {
   const view = map.getView();
