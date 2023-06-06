@@ -40,6 +40,21 @@ const filteredSource = vectorFilter(vectorSource, {
   extent: maplatSource.getProjection().getExtent()
 });
 
+const stockIconHash = {};
+const stockIconStyle = (clusterMember) => {
+  const key = iconSelector(clusterMember);
+  if (!stockIconHash[key]) {
+    stockIconHash[key] = new Icon({
+      src: key,
+      anchor: [0.5, 1.0]
+    });
+  }
+  return new Style({
+    geometry: clusterMember.getGeometry(),
+    image: stockIconHash[key]
+  });;
+};
+
 const map = new Map({
   target : 'map',
   layers: [
@@ -49,15 +64,7 @@ const map = new Map({
     }),
     new VectorLayer({
       source: filteredSource,
-      style: (clusterMember) => {
-        return new Style({
-          geometry: clusterMember.getGeometry(),
-          image: new Icon({
-            src: iconSelector(clusterMember),
-            anchor: [0.5, 1.0]
-          }),
-        });
-      },
+      style: stockIconStyle
     })
   ],
   view: new View({
