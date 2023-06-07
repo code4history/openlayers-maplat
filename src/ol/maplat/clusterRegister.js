@@ -55,24 +55,6 @@ class clusterRegister extends LayerGroup {
       radius: 20,
       fill: outerCircleFill,
     });
-    const darkIcon = new Icon({
-      src: 'data/icons/emoticon-cool.svg',
-    });
-    const lightIcon = new Icon({
-      src: 'data/icons/emoticon-cool-outline.svg',
-    });
-    
-    /**
-     * Single feature style, users for clusters with 1 feature and cluster circles.
-     * @param {Feature} clusterMember A feature from a cluster.
-     * @return {Style} An icon style for the cluster member's location.
-     */
-    function clusterMemberStyle(clusterMember) {
-      return new Style({
-        geometry: clusterMember.getGeometry(),
-        image: clusterMember.get('LEISTUNG') > 5 ? darkIcon : lightIcon,
-      });
-    }
     
     let clickFeature, clickResolution;
     /**
@@ -101,7 +83,7 @@ class clusterRegister extends LayerGroup {
           })
         );
         styles.push(
-          clusterMemberStyle(
+          callback(
             new Feature({
               ...clusterMembers[i].getProperties(),
               geometry: point,
@@ -183,7 +165,7 @@ class clusterRegister extends LayerGroup {
         ];
       }
       const originalFeature = feature.get('features')[0];
-      return clusterMemberStyle(originalFeature);
+      return callback(originalFeature);
     }
     
     const clusterSource = new Cluster({
@@ -232,8 +214,12 @@ class clusterRegister extends LayerGroup {
       });
     });
     
-    map.on('click', (event) => {
-      clusters.getFeatures(event.pixel).then((features) => {
+    map.on('click', async (event) => {
+      let features = await clusterCircles.getFeatures(event.pixel);
+      if (features.length > 0) {
+        console.log(features[0].get('features')[0].getProperties());
+      } else {
+        features = await clusters.getFeatures(event.pixel);
         if (features.length > 0) {
           const clusterMembers = features[0].get('features');
           if (clusterMembers.length > 1) {
@@ -256,9 +242,11 @@ class clusterRegister extends LayerGroup {
               // Zoom to the extent of the cluster members.
               view.fit(extent, {duration: 500, padding: [50, 50, 50, 50]});
             }
+          } else {
+            console.log(clusterMembers[0].getProperties());
           }
         }
-      });
+      }
     });
   }
 }

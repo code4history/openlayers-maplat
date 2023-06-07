@@ -83,7 +83,7 @@ const map = new Map({
     new DragRotate({condition: altKeyOnly})
   ])
 });
-clusterLayer.registerMap(filteredSource, map);
+clusterLayer.registerMap(filteredSource, map, stockIconStyle);
 
 document.getElementById('zoom-out').onclick = function () {
   const view = map.getView();
