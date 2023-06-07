@@ -74,8 +74,9 @@ class clusterRegister extends LayerGroup {
         cluster.getGeometry().getCoordinates(),
         resolution
       ).reduce((styles, coordinates, i) => {
+        const footPoint = clusterMembers[i].getGeometry().getCoordinates();
         const point = new Point(coordinates);
-        const line = new LineString([centerCoordinates, coordinates]);
+        const line = new LineString([footPoint, coordinates]);
         styles.unshift(
           new Style({
             geometry: line,
