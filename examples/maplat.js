@@ -16,8 +16,24 @@ import clusterRegister from '../src/ol/maplat/clusterRegister.js';
 
 const centerLngLat = [139.536710, 36.246680];
 
-const settingsReq = await fetch("https://s.maplat.jp/r/tatebayashimap/maps/tatebayashi_ojozu.json");
-const settings = await settingsReq.json();
+const createSourceFunc = async (url) => {
+  const settingsReq = await fetch(url);
+  const settings = await settingsReq.json();
+
+  const maplatSource = new MaplatSource({
+    size: [settings.width, settings.height],
+    url: settings.url,
+    tinCompiled: settings.compiled,
+    mapID: "tatebayashi_ojozu"
+  });
+
+  return maplatSource;
+};
+
+const [ojozuSource, akimotoSource] = await Promise.all([
+  "https://s.maplat.jp/r/tatebayashimap/maps/tatebayashi_ojozu.json", 
+  "https://s.maplat.jp/r/tatebayashimap/maps/tatebayashi_castle_akimoto.json"
+].map(async url => createSourceFunc(url)));
 
 const vectorReq = await fetch("https://raw.githubusercontent.com/code4history/TatebayashiStones/master/tatebayashi_stones.geojson");
 const vectorJSON = await vectorReq.json();
@@ -26,20 +42,6 @@ const vectorSource = new VectorSource({
     featureProjection: "EPSG:4326",
     dataProjection: "EPSG:4326"
   })
-});
-
-console.log(settings);
-
-const maplatSource = new MaplatSource({
-  size: [settings.width, settings.height],
-  url: settings.url,
-  tinCompiled: settings.compiled,
-  mapID: "tatebayashi_ojozu"
-});
-
-const filteredSource = vectorFilter(vectorSource, {
-  projectTo: maplatSource.getProjection(),
-  extent: maplatSource.getProjection().getExtent()
 });
 
 const stockIconHash = {};
@@ -57,42 +59,56 @@ const stockIconStyle = (clusterMember) => {
   });;
 };
 
-const clusterLayer = new clusterRegister({
-});
-const map = new Map({
-  target : 'map',
-  layers: [
-    new WebGLTileLayer({
-      title: "館林御城図",
-      source: maplatSource
-    }),
-    /*new VectorLayer({
-      source: filteredSource,
-      style: stockIconStyle
-    })*/
-    clusterLayer
-  ],
-  view: new View({
-    center: transform(centerLngLat,"EPSG:4326", maplatSource.getProjection()),
-    projection: maplatSource.getProjection(),
+let map;
+
+const sourceChange = (isOjozu) => {
+  const source = isOjozu ? ojozuSource : akimotoSource;
+
+  const filteredVector = vectorFilter(vectorSource, {
+    projectTo: source.getProjection(),
+    extent: source.getProjection().getExtent()
+  });
+  const clusterLayer = new clusterRegister({
+  });
+  const view = new View({
+    center: transform(centerLngLat,"EPSG:4326", source.getProjection()),
+    projection: source.getProjection(),
     constrainRotation: false,
     zoom: 2,
     maxZoom: 6
-  }),
-  interactions: defaults({altShiftDragRotate: false}).extend([
-    new DragRotate({condition: altKeyOnly})
-  ])
-});
-clusterLayer.registerMap(filteredSource, map, stockIconStyle);
+  });
 
-document.getElementById('zoom-out').onclick = function () {
-  const view = map.getView();
-  const zoom = view.getZoom();
-  view.setZoom(zoom - 1);
+  if (!map) {
+    map = new Map({
+      target : 'map',
+      layers: [
+        new WebGLTileLayer({
+          title: "館林御城図",
+          source: source
+        }),
+        clusterLayer
+      ],
+      view: view,
+      interactions: defaults({altShiftDragRotate: false}).extend([
+        new DragRotate({condition: altKeyOnly})
+      ])
+    });
+  } else {
+    map.getLayers().insertAt(0, source);
+    map.getLayers().insertAt(1, clusterLayer);
+    map.setView(view);
+  }
+
+  clusterLayer.registerMap(filteredVector, map, stockIconStyle);
 };
 
-document.getElementById('zoom-in').onclick = function () {
-  const view = map.getView();
-  const zoom = view.getZoom();
-  view.setZoom(zoom + 1);
+
+sourceChange(true);
+
+document.getElementById('ojozu').onclick = function () {
+  sourceChange(true);
+};
+
+document.getElementById('akimoto').onclick = function () {
+  sourceChange(false);
 };

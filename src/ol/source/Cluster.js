@@ -256,9 +256,11 @@ class Cluster extends VectorSource {
    * @protected
    */
   cluster() {
+    console.log("Cluster");
     if (this.resolution === undefined || !this.source) {
       return;
     }
+    console.log(this.resolution);
     const extent = createEmpty();
     const mapDistance = this.distance * this.resolution;
     const features = this.source.getFeatures();
