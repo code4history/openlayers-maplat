@@ -54,9 +54,6 @@ function _boundingExtentXYs(xs, ys, dest) {
  * @api
  */
 export function buffer(extent, value, dest) {
-  console.log(extent);
-  console.log(value);
-  console.log(dest);
   if (dest) {
     dest[0] = extent[0] - value;
     dest[1] = extent[1] - value;

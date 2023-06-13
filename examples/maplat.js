@@ -8,10 +8,8 @@ import { altKeyOnly } from '../src/ol/events/condition.js';
 import MaplatSource from '../src/ol/maplat/Source.js';
 import VectorSource from '../src/ol/source/Vector.js';
 import FormatGeoJSON from '../src/ol/format/GeoJSON.js';
-import VectorLayer from '../src/ol/layer/Vector.js';
 import { Style, Icon } from '../src/ol/style.js';
 import vectorFilter from '../src/ol/maplat/vectorFilter.js';
-import ClusterLayer from '../src/ol/maplat/ClusterLayer.js';
 import clusterRegister from '../src/ol/maplat/clusterRegister.js';
 
 const centerLngLat = [139.536710, 36.246680];
@@ -19,11 +17,9 @@ const centerLngLat = [139.536710, 36.246680];
 const createSourceFunc = async (url) => {
   const settingsReq = await fetch(url);
   const settings = await settingsReq.json();
-  console.log(settings);
 
   const mapDivide = url.split(/[\/\.]/);
   const mapID = mapDivide[mapDivide.length - 2];
-  console.log(mapID);
   const maplatSource = new MaplatSource({
     size: [settings.width, settings.height],
     url: settings.url,
@@ -67,7 +63,6 @@ let map;
 
 const sourceChange = (isOjozu) => {
   const source = isOjozu ? ojozuSource : akimotoSource;
-  console.log(source.getProjection());
 
   const filteredVector = vectorFilter(vectorSource, {
     projectTo: source.getProjection(),
@@ -99,7 +94,7 @@ const sourceChange = (isOjozu) => {
       ])
     });
   } else {
-    console.log("Hoge");
+    map.getLayers().item(1).removeMap();
     map.setLayers([
       new WebGLTileLayer({
         title: "館林御城図",

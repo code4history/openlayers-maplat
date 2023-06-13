@@ -18,6 +18,9 @@ import monotoneChainConvexHull from 'monotone-chain-convex-hull';
 import LayerGroup from '../layer/Group.js';
 
 class clusterRegister extends LayerGroup {
+  pointermove__;
+  pointerclick__;
+
   constructor(options) {
     super(options);
   }
@@ -194,13 +197,12 @@ class clusterRegister extends LayerGroup {
       style: clusterCircleStyle,
     });
     
-    const groupLayer = this;//new LayerGroup({});
+    const groupLayer = this;
     groupLayer.getLayers().push(clusterHulls);
     groupLayer.getLayers().push(clusters);
     groupLayer.getLayers().push(clusterCircles);
-    //map.getLayers().push(groupLayer);
     
-    map.on('pointermove', (event) => {
+    this.pointermove__ = (event) => {
       clusters.getFeatures(event.pixel).then((features) => {
         if (features[0] !== hoverFeature) {
           // Display the convex hull on hover.
@@ -213,9 +215,10 @@ class clusterRegister extends LayerGroup {
               : '';
         }
       });
-    });
+    };
+    map.on('pointermove', this.pointermove__);
     
-    map.on('click', async (event) => {
+    this.pointerclick__ = async (event) => {
       let features = await clusterCircles.getFeatures(event.pixel);
       if (features.length > 0) {
         console.log(features[0].get('features')[0].getProperties());
@@ -248,7 +251,13 @@ class clusterRegister extends LayerGroup {
           }
         }
       }
-    });
+    };
+    map.on('click', this.pointerclick__);
+
+    this.removeMap = () => {
+      map.un("pointermove", this.pointermove__);
+      map.un("click", this.pointerclick__);
+    };
   }
 }
 

@@ -60,7 +60,6 @@ class Source extends Zoomify {
     //Set up Maplat projection
     let maplatProjection;
     const maplatProjectionCode = `Maplat:${mapID}`;
-    console.log(maplatProjectionCode);
     if (maplatProjectionStore.indexOf(maplatProjectionCode) < 0) {
       maplatProjection = new Projection({
         code: maplatProjectionCode,
@@ -94,12 +93,8 @@ class Source extends Zoomify {
         );
       });
       maplatProjectionStore.push(maplatProjectionCode);
-      console.log("Create");
-      console.log(`${maplatProjection.getExtent()}`);
     } else {
       maplatProjection = getProjection(maplatProjectionCode);
-      console.log("Cached:");
-      console.log(`${maplatProjection.getExtent()}`);
     }
 
     super({
