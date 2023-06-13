@@ -1,6 +1,8 @@
 /**
  * @module ol/maplat/viewportSwitch
  */
+import { Projection, addCoordinateTransforms, transform, addProjection,
+  get as getProjection } from "../proj.js";
 
 const thetas = [0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75].map((pow) => {
   return pow * Math.PI;
@@ -31,7 +33,7 @@ const params2Params = (fromCenter, fromRotation, fromResolution, baseRadius, fro
 };
   
 const maplat2Base = (maplatCenter, maplatRotation, maplatResolution, baseRadius, maplatProj, baseProj = "EPSG:3857") => {
-  const baseCenter = ol.proj.transform(maplatCenter, maplatProj, baseProj);
+  const baseCenter = transform(maplatCenter, maplatProj, baseProj);
   const maplatParams = base2MaplatParams(baseCenter, baseRadius, maplatProj, baseProj);
   const baseResolution = maplatResolution * baseRadius / maplatParams[2];
   const baseRotation = normalizeAngle(maplatRotation + maplatParams[1]);
@@ -48,7 +50,7 @@ const base2Maplat = (baseCenter, baseRotation, baseResolution, baseRadius, mapla
   
 const base2MaplatParams = (center, radius, maplatProj, baseProj) => {
   const maplatVicinities = center2Vicinities(center, radius).map((baseCoord) => {
-    return ol.proj.transform(baseCoord, baseProj, maplatProj);
+    return transform(baseCoord, baseProj, maplatProj);
   });
   const maplatCenter = maplatVicinities.shift();
   const maplatParams = maplatVicinities.map((maplatCoord, index) => {
@@ -70,3 +72,4 @@ const base2MaplatParams = (center, radius, maplatProj, baseProj) => {
   return maplatParams;
 };
 
+export default params2Params;

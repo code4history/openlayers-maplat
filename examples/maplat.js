@@ -11,6 +11,7 @@ import FormatGeoJSON from '../src/ol/format/GeoJSON.js';
 import { Style, Icon } from '../src/ol/style.js';
 import vectorFilter from '../src/ol/maplat/vectorFilter.js';
 import clusterRegister from '../src/ol/maplat/clusterRegister.js';
+import params2Params from "../src/ol/maplat/viewportSwitch.js";
 
 const centerLngLat = [139.536710, 36.246680];
 
@@ -62,7 +63,14 @@ const stockIconStyle = (clusterMember) => {
 let map;
 
 const sourceChange = (isOjozu) => {
-  const source = isOjozu ? ojozuSource : akimotoSource;
+  const fromSource = isOjozu ? akimotoSource : ojozuSource;
+  const toSource = isOjozu ? ojozuSource : akimotoSource;
+  let toCenter, toResolution, toRotation;
+  if (!map) {
+    toCenter = transform(centerLngLat,"EPSG:4326", toSource.getProjection());
+  } else {
+
+  }
 
   const filteredVector = vectorFilter(vectorSource, {
     projectTo: source.getProjection(),
