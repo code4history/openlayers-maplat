@@ -19,12 +19,16 @@ const centerLngLat = [139.536710, 36.246680];
 const createSourceFunc = async (url) => {
   const settingsReq = await fetch(url);
   const settings = await settingsReq.json();
+  console.log(settings);
 
+  const mapDivide = url.split(/[\/\.]/);
+  const mapID = mapDivide[mapDivide.length - 2];
+  console.log(mapID);
   const maplatSource = new MaplatSource({
     size: [settings.width, settings.height],
     url: settings.url,
     tinCompiled: settings.compiled,
-    mapID: "tatebayashi_ojozu"
+    mapID: mapID
   });
 
   return maplatSource;
@@ -62,7 +66,8 @@ const stockIconStyle = (clusterMember) => {
 let map;
 
 const sourceChange = (isOjozu) => {
-  const source = isOjozu ? ojozuSource : akimotoSource;
+  const source = isOjozu ? akimotoSource : akimotoSource;
+  console.log(source.getProjection());
 
   const filteredVector = vectorFilter(vectorSource, {
     projectTo: source.getProjection(),
@@ -94,8 +99,13 @@ const sourceChange = (isOjozu) => {
       ])
     });
   } else {
-    map.getLayers().insertAt(0, source);
-    map.getLayers().insertAt(1, clusterLayer);
+    map.setLayers([
+      new WebGLTileLayer({
+        title: "館林御城図",
+        source: source
+      }),
+      clusterLayer
+    ]);
     map.setView(view);
   }
 

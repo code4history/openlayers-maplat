@@ -91,8 +91,12 @@ class Source extends Zoomify {
         );
       });
       maplatProjectionStore.push(maplatProjectionCode);
+      console.log("Create");
+      console.log(`${maplatProjection.getExtent()}`);
     } else {
       maplatProjection = getProjection(maplatProjectionCode);
+      console.log("Cached:");
+      console.log(`${maplatProjection.getExtent()}`);
     }
 
     super({
