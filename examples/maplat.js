@@ -66,7 +66,7 @@ const stockIconStyle = (clusterMember) => {
 let map;
 
 const sourceChange = (isOjozu) => {
-  const source = isOjozu ? akimotoSource : akimotoSource;
+  const source = isOjozu ? ojozuSource : akimotoSource;
   console.log(source.getProjection());
 
   const filteredVector = vectorFilter(vectorSource, {
@@ -99,6 +99,7 @@ const sourceChange = (isOjozu) => {
       ])
     });
   } else {
+    console.log("Hoge");
     map.setLayers([
       new WebGLTileLayer({
         title: "館林御城図",

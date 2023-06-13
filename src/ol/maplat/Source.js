@@ -3,7 +3,8 @@
  */
 import Zoomify from "../source/Zoomify.js";
 import Tin from "@maplat/tin";
-import { Projection, addCoordinateTransforms, transform, get as getProjection } from "../proj.js";
+import { Projection, addCoordinateTransforms, transform, addProjection,
+  get as getProjection } from "../proj.js";
 
 /**
  * @typedef {Object} Options
@@ -59,6 +60,7 @@ class Source extends Zoomify {
     //Set up Maplat projection
     let maplatProjection;
     const maplatProjectionCode = `Maplat:${mapID}`;
+    console.log(maplatProjectionCode);
     if (maplatProjectionStore.indexOf(maplatProjectionCode) < 0) {
       maplatProjection = new Projection({
         code: maplatProjectionCode,
@@ -66,6 +68,7 @@ class Source extends Zoomify {
         extent: extent,
         worldExtent: worldExtent
       });
+      addProjection(maplatProjection);
       addCoordinateTransforms(
         maplatProjection,
         "EPSG:3857",
