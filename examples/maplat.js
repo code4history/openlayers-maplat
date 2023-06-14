@@ -70,7 +70,7 @@ const sourceChange = (isOjozu) => {
     toParam = {
       center: transform(centerLngLat,"EPSG:4326", toSource.getProjection()),
       rotation: 0,
-      zoom: 2
+      zoom: 0
     };
   } else {
     const fromView = map.getView();
@@ -87,8 +87,7 @@ const sourceChange = (isOjozu) => {
   }
   toParam = Object.assign(toParam, {
     projection: toSource.getProjection(),
-    constrainRotation: false,
-    maxZoom: 6
+    constrainRotation: false
   });
 
   const filteredVector = vectorFilter(vectorSource, {
@@ -114,6 +113,7 @@ const sourceChange = (isOjozu) => {
         new DragRotate({condition: altKeyOnly})
       ])
     });
+    view.fit(toSource.getProjection().getExtent(), {/*duration: 500, */padding: [50, 50, 50, 50]});
   } else {
     map.getLayers().item(1).removeMap();
     map.setLayers([
