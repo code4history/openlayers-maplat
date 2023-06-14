@@ -1,12 +1,12 @@
 /**
- * @module ol/maplat/vectorFilter
+ * @module ol/maplat/vector/filter
  */
-import VectorSource from "../source/Vector.js";
+import VectorSource from "../../source/Vector.js";
 
 /**
  * @typedef {Object} Options
- * @property {import("../extent.js").Extent} [extent] Extent to be filterd. If `projectTo` is specfied, extent is based on `projectTo` projection.
- * @property {import("../proj.js").ProjectionLike} [projectTo] Projection to reproject.
+ * @property {import("../../extent.js").Extent} [extent] Extent to be filterd. If `projectTo` is specfied, extent is based on `projectTo` projection.
+ * @property {import("../../proj.js").ProjectionLike} [projectTo] Projection to reproject.
  */
 
 /**
@@ -15,7 +15,7 @@ import VectorSource from "../source/Vector.js";
  * @param {Options} options Options of vectorFilter
  * @return {VectorSource} The reprojected / filtered vector source.
  */
-export default function vectorFilter(source, options = {}) {
+function filter(source, options = {}) {
   const extent = options.extent;
   const projectTo = options.projectTo;
   const retSource = new VectorSource();
@@ -30,3 +30,5 @@ export default function vectorFilter(source, options = {}) {
   });
   return retSource;
 };
+
+export default filter;

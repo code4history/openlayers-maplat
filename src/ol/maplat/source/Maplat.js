@@ -1,14 +1,14 @@
 /**
- * @module ol/maplat/Source
+ * @module ol/maplat/source/Maplat
  */
-import Zoomify from "../source/Zoomify.js";
+import Zoomify from "../../source/Zoomify.js";
 import Tin from "@maplat/tin";
 import { Projection, addCoordinateTransforms, transform, addProjection,
-  get as getProjection } from "../proj.js";
+  get as getProjection } from "../../proj.js";
 
 /**
  * @typedef {Object} Options
- * @property {import("../source/Source.js").AttributionLike} [attributions] Attributions.
+ * @property {import("../../source/Source.js").AttributionLike} [attributions] Attributions.
  * @property {number} [cacheSize] Initial tile cache size. Will auto-grow to hold at least the number of tiles in the viewport.
  * @property {null|string} [crossOrigin] The `crossOrigin` attribute for loaded images.  Note that
  * you must provide a `crossOrigin` value  you want to access pixel data with the Canvas renderer.
@@ -19,11 +19,11 @@ import { Projection, addCoordinateTransforms, transform, addProjection,
  * @property {number} [reprojectionErrorThreshold=0.5] Maximum allowed reprojection error (in pixels).
  * Higher values can increase reprojection performance, but decrease precision.
  * @property {string} url URL template of the Maplat tile.
- * @property {import("../size.js").Size} size Size.
+ * @property {import("../../size.js").Size} size Size.
  * @property {number} [transition] Duration of the opacity transition for rendering.
  * To disable the opacity transition, pass `transition: 0`.
  * @property {number} [tileSize=256] Tile size. Same tile size is used for all zoom levels.
- * @property {number|import("../array.js").NearestDirectionFunction} [zDirection=0]
+ * @property {number|import("../../array.js").NearestDirectionFunction} [zDirection=0]
  * Choose whether to use tiles with a higher or lower zoom level when between integer
  * zoom levels. See {@link module:ol/tilegrid/TileGrid~TileGrid#getZForResolution}.
  * @property {import("@maplat/tin").Compiled} [tinCompiled] Compiled data of Maplat TIN (Triangle Irregular Network) setting.
@@ -41,7 +41,7 @@ const maplatProjectionStore = [];
  * Layer source for tile data in Maplat format.
  * @api
  */
-class Source extends Zoomify {
+class Maplat extends Zoomify {
   /**
    * @param {Options} options Options.
    */
@@ -118,4 +118,4 @@ class Source extends Zoomify {
   }
 }
 
-export default Source;
+export default Maplat;

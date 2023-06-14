@@ -5,11 +5,11 @@ import { transform } from '../src/ol/proj.js';
 import { defaults } from '../src/ol/interaction/defaults.js';
 import { DragRotate } from '../src/ol/interaction.js';
 import { altKeyOnly } from '../src/ol/events/condition.js';
-import MaplatSource from '../src/ol/maplat/Source.js';
+import MaplatSource from '../src/ol/maplat/source/Maplat.js';
 import VectorSource from '../src/ol/source/Vector.js';
 import FormatGeoJSON from '../src/ol/format/GeoJSON.js';
 import { Style, Icon } from '../src/ol/style.js';
-import vectorFilter from '../src/ol/maplat/vectorFilter.js';
+import vectorFilter from '../src/ol/maplat/vector/vectorFilter.js';
 import clusterRegister from '../src/ol/maplat/clusterRegister.js';
 import params2Params from "../src/ol/maplat/viewportSwitch.js";
 
