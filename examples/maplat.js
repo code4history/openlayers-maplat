@@ -65,26 +65,39 @@ let map;
 const sourceChange = (isOjozu) => {
   const fromSource = isOjozu ? akimotoSource : ojozuSource;
   const toSource = isOjozu ? ojozuSource : akimotoSource;
-  let toCenter, toResolution, toRotation;
+  let toCenter, toResolution, toRotation, toParam;
   if (!map) {
-    toCenter = transform(centerLngLat,"EPSG:4326", toSource.getProjection());
+    toParam = {
+      center: transform(centerLngLat,"EPSG:4326", toSource.getProjection()),
+      rotation: 0,
+      zoom: 2
+    };
   } else {
-
+    const fromView = map.getView();
+    const fromCenter = fromView.getCenter();
+    const fromRotation = fromView.getRotation();
+    const fromResolution = fromView.getResolution();
+    [toCenter, toRotation, toResolution] = params2Params(fromCenter, fromRotation, fromResolution,
+      500, fromSource.getProjection(), toSource.getProjection());
+    toParam = {
+      center: toCenter,
+      rotation: toRotation,
+      resolution: toResolution
+    };
   }
+  toParam = Object.assign(toParam, {
+    projection: toSource.getProjection(),
+    constrainRotation: false,
+    maxZoom: 6
+  });
 
   const filteredVector = vectorFilter(vectorSource, {
-    projectTo: source.getProjection(),
-    extent: source.getProjection().getExtent()
+    projectTo: toSource.getProjection(),
+    extent: toSource.getProjection().getExtent()
   });
   const clusterLayer = new clusterRegister({
   });
-  const view = new View({
-    center: transform(centerLngLat,"EPSG:4326", source.getProjection()),
-    projection: source.getProjection(),
-    constrainRotation: false,
-    zoom: 2,
-    maxZoom: 6
-  });
+  const view = new View(toParam);
 
   if (!map) {
     map = new Map({
@@ -92,7 +105,7 @@ const sourceChange = (isOjozu) => {
       layers: [
         new WebGLTileLayer({
           title: "館林御城図",
-          source: source
+          source: toSource
         }),
         clusterLayer
       ],
@@ -106,7 +119,7 @@ const sourceChange = (isOjozu) => {
     map.setLayers([
       new WebGLTileLayer({
         title: "館林御城図",
-        source: source
+        source: toSource
       }),
       clusterLayer
     ]);
