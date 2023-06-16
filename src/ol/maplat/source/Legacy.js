@@ -63,6 +63,7 @@ class Legacy extends Zoomify {
     const tin = new Tin();
     tin.setCompiled(options.tinCompiled);
     const mapID = options.mapID;
+    console.log(`${size} ${maxZoom} ${extent} ${url} ${mapID}`);
 
     //Set up Maplat projection
     let maplatProjection;

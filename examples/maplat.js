@@ -24,7 +24,7 @@ const createSourceFunc = async (url) => {
   const mapDivide = url.split(/[\/\.]/);
   const mapID = mapDivide[mapDivide.length - 2];
   const maplatSource = new LegacySource({
-    size: [settings.width, settings.height],
+    size: settings.compiled.wh || [settings.width, settings.height],
     url: settings.url,
     tinCompiled: settings.compiled,
     mapID: mapID,
@@ -33,7 +33,7 @@ const createSourceFunc = async (url) => {
   return maplatSource;
 };
 
-const [ojozuSource, akimotoSource] = await Promise.all(
+const [ojozuSource, akimotoSource, onotokoSource] = await Promise.all(
   [
     'https://s.maplat.jp/r/tatebayashimap/maps/tatebayashi_ojozu.json',
     'https://s.maplat.jp/r/tatebayashimap/maps/tatebayashi_castle_akimoto.json',
@@ -79,8 +79,13 @@ const stockIconStyle = (clusterMember) => {
 let map;
 
 const sourceChange = (isOjozu) => {
-  const fromSource = isOjozu ? akimotoSource : ojozuSource;
-  const toSource = isOjozu ? ojozuSource : akimotoSource;
+  const fromSource = map ? map.getLayers().getArray()[0].getSource() : null;
+  const toSource =
+    isOjozu == 'ojozu'
+      ? ojozuSource
+      : isOjozu == 'akimoto'
+      ? akimotoSource
+      : onotokoSource;
   let toCenter, toResolution, toRotation, toParam;
   if (!map) {
     toParam = {
@@ -165,12 +170,16 @@ const sourceChange = (isOjozu) => {
   clusterLayer.registerMap(filteredVector, map, stockIconStyle);
 };
 
-sourceChange(true);
+sourceChange('ojozu');
 
 document.getElementById('ojozu').onclick = function () {
-  sourceChange(true);
+  sourceChange('ojozu');
 };
 
 document.getElementById('akimoto').onclick = function () {
-  sourceChange(false);
+  sourceChange('akimoto');
+};
+
+document.getElementById('onotoko').onclick = function () {
+  sourceChange('onotoko');
 };
