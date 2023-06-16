@@ -35,7 +35,8 @@ const createSourceFunc = async (url) => {
 
 const [ojozuSource, akimotoSource] = await Promise.all([
   "https://s.maplat.jp/r/tatebayashimap/maps/tatebayashi_ojozu.json", 
-  "https://s.maplat.jp/r/tatebayashimap/maps/tatebayashi_castle_akimoto.json"
+  "https://s.maplat.jp/r/tatebayashimap/maps/tatebayashi_castle_akimoto.json",
+  "https://s.maplat.jp/r/tatebayashimap/maps/tatebayashi_satonuma_village_1.json"
 ].map(async url => createSourceFunc(url)));
 
 const vectorReq = await fetch("https://raw.githubusercontent.com/code4history/TatebayashiStones/master/tatebayashi_stones.geojson");

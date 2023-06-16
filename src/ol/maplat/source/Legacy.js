@@ -1,10 +1,15 @@
 /**
  * @module ol/maplat/source/Legacy
  */
-import Zoomify from "../../source/Zoomify.js";
-import Tin from "@maplat/tin";
-import { Projection, addCoordinateTransforms, transform, addProjection,
-  get as getProjection } from "../../proj.js";
+import Tin from '@maplat/tin';
+import Zoomify from '../../source/Zoomify.js';
+import {
+  Projection,
+  addCoordinateTransforms,
+  addProjection,
+  get as getProjection,
+  transform,
+} from '../../proj.js';
 
 /**
  * @typedef {Object} Options
@@ -38,7 +43,7 @@ const maplatProjectionStore = [];
 
 /**
  * @classdesc
- * Layer source for tile data in Maplat format.
+ * Layer source for tile data in Maplat Legacy format.
  * @api
  */
 class Legacy extends Zoomify {
@@ -46,9 +51,11 @@ class Legacy extends Zoomify {
    * @param {Options} options Options.
    */
   constructor(options) {
-    //Set up Maplat TIN 
+    //Set up Maplat TIN
     const size = options.size;
-    const maxZoom = Math.ceil(Math.max(Math.log2(size[0]/256), Math.log2(size[1]/256)));
+    const maxZoom = Math.ceil(
+      Math.max(Math.log2(size[0] / 256), Math.log2(size[1] / 256))
+    );
     const extent = [0, -size[1], size[0], 0];
     const worldExtentSize = 256 * Math.pow(2, maxZoom);
     const worldExtent = [0, -worldExtentSize, worldExtentSize, 0];
@@ -63,33 +70,53 @@ class Legacy extends Zoomify {
     if (maplatProjectionStore.indexOf(maplatProjectionCode) < 0) {
       maplatProjection = new Projection({
         code: maplatProjectionCode,
-        units: "pixels",
+        units: 'pixels',
         extent: extent,
-        worldExtent: worldExtent
+        worldExtent: worldExtent,
       });
       addProjection(maplatProjection);
       addCoordinateTransforms(
         maplatProjection,
-        "EPSG:3857",
+        'EPSG:3857',
         // @ts-ignore
-        xy => tin.transform([xy[0],-xy[1]], false),
-        merc => {
+        (xy) => tin.transform([xy[0], -xy[1]], false),
+        (merc) => {
           const xy = tin.transform(merc, true);
           return [xy[0], -xy[1]];
         }
       );
       addCoordinateTransforms(
         maplatProjection,
-        "EPSG:4326",
-        xy => transform(transform(xy, maplatProjection, "EPSG:3857"), "EPSG:3857", "EPSG:4326"),
-        lnglat => transform(transform(lnglat, "EPSG:4326", "EPSG:3857"), "EPSG:3857", maplatProjection)
+        'EPSG:4326',
+        (xy) =>
+          transform(
+            transform(xy, maplatProjection, 'EPSG:3857'),
+            'EPSG:3857',
+            'EPSG:4326'
+          ),
+        (lnglat) =>
+          transform(
+            transform(lnglat, 'EPSG:4326', 'EPSG:3857'),
+            'EPSG:3857',
+            maplatProjection
+          )
       );
       maplatProjectionStore.forEach((projectionCode) => {
         addCoordinateTransforms(
           maplatProjection,
           projectionCode,
-          xy => transform(transform(xy, maplatProjection, "EPSG:3857"), "EPSG:3857", projectionCode),
-          xy => transform(transform(xy, projectionCode, "EPSG:3857"), "EPSG:3857", maplatProjection)
+          (xy) =>
+            transform(
+              transform(xy, maplatProjection, 'EPSG:3857'),
+              'EPSG:3857',
+              projectionCode
+            ),
+          (xy) =>
+            transform(
+              transform(xy, projectionCode, 'EPSG:3857'),
+              'EPSG:3857',
+              maplatProjection
+            )
         );
       });
       maplatProjectionStore.push(maplatProjectionCode);
@@ -105,11 +132,11 @@ class Legacy extends Zoomify {
       projection: maplatProjection,
       extent: extent,
       size: size,
-      url: "",
+      url: '',
       reprojectionErrorThreshold: options.reprojectionErrorThreshold,
       transition: options.transition,
     });
-    this.setTileUrlFunction(tileCoord =>
+    this.setTileUrlFunction((tileCoord) =>
       url
         .replace('{z}', `${tileCoord[0]}`)
         .replace('{x}', `${tileCoord[1]}`)
@@ -117,9 +144,7 @@ class Legacy extends Zoomify {
     );
   }
 
-  static async init(options) {
-    
-  } 
+  static async init(options) {}
 }
 
 export default Legacy;
