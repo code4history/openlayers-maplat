@@ -2,20 +2,14 @@
  * @module ol/maplat/clusterRegister
  */
 import Feature from '../Feature.js';
-import {
-  Circle as CircleStyle,
-  Fill,
-  Icon,
-  Stroke,
-  Style,
-  Text,
-} from '../style.js';
+import LayerGroup from '../layer/Group.js';
+// @ts-ignore
+import monotoneChainConvexHull from 'monotone-chain-convex-hull';
+import {Circle as CircleStyle, Fill, Stroke, Style, Text} from '../style.js';
 import {Cluster} from '../source.js';
 import {LineString, Point, Polygon} from '../geom.js';
 import {Vector as VectorLayer} from '../layer.js';
 import {createEmpty, extend, getHeight, getWidth} from '../extent.js';
-import monotoneChainConvexHull from 'monotone-chain-convex-hull';
-import LayerGroup from '../layer/Group.js';
 
 class clusterRegister extends LayerGroup {
   pointermove__;
@@ -29,7 +23,7 @@ class clusterRegister extends LayerGroup {
     const circleDistanceMultiplier = 1;
     const circleFootSeparation = 28;
     const circleStartAngle = Math.PI / 2;
-    
+
     const convexHullFill = new Fill({
       color: 'rgba(255, 153, 0, 0.4)',
     });
@@ -58,22 +52,23 @@ class clusterRegister extends LayerGroup {
       radius: 20,
       fill: outerCircleFill,
     });
-    
+
     let clickFeature, clickResolution;
     /**
      * Style for clusters with features that are too close to each other, activated on click.
      * @param {Feature} cluster A cluster with overlapping members.
      * @param {number} resolution The current view resolution.
-     * @return {Style|null} A style to render an expanded view of the cluster members.
+     * @return {Array<Style>|null} A style to render an expanded view of the cluster members.
      */
     function clusterCircleStyle(cluster, resolution) {
       if (cluster !== clickFeature || resolution !== clickResolution) {
         return null;
       }
       const clusterMembers = cluster.get('features');
-      const centerCoordinates = cluster.getGeometry().getCoordinates();
+      // @ts-ignore
       return generatePointsCircle(
         clusterMembers.length,
+        // @ts-ignore
         cluster.getGeometry().getCoordinates(),
         resolution
       ).reduce((styles, coordinates, i) => {
@@ -81,6 +76,7 @@ class clusterRegister extends LayerGroup {
         const point = new Point(coordinates);
         const line = new LineString([footPoint, coordinates]);
         styles.unshift(
+          // @ts-ignore
           new Style({
             geometry: line,
             stroke: convexHullStroke,
@@ -97,7 +93,7 @@ class clusterRegister extends LayerGroup {
         return styles;
       }, []);
     }
-    
+
     /**
      * From
      * https://github.com/Leaflet/Leaflet.markercluster/blob/31360f2/src/MarkerCluster.Spiderfier.js#L55-L72
@@ -115,9 +111,9 @@ class clusterRegister extends LayerGroup {
       const angleStep = (Math.PI * 2) / count;
       const res = [];
       let angle;
-    
+
       legLength = Math.max(legLength, 35) * resolution; // Minimum distance to get outside the cluster icon.
-    
+
       for (let i = 0; i < count; ++i) {
         // Clockwise, like spiral.
         angle = circleStartAngle + i * angleStep;
@@ -126,10 +122,10 @@ class clusterRegister extends LayerGroup {
           clusterCenter[1] + legLength * Math.sin(angle),
         ]);
       }
-    
+
       return res;
     }
-    
+
     let hoverFeature;
     /**
      * Style for convex hulls of clusters, activated on hover.
@@ -150,7 +146,7 @@ class clusterRegister extends LayerGroup {
         stroke: convexHullStroke,
       });
     }
-    
+
     function clusterStyle(feature) {
       const size = feature.get('features').length;
       if (size > 1) {
@@ -171,37 +167,37 @@ class clusterRegister extends LayerGroup {
       const originalFeature = feature.get('features')[0];
       return callback(originalFeature);
     }
-    
+
     const clusterSource = new Cluster({
       attributions:
         'Data: <a href="https://www.data.gv.at/auftritte/?organisation=stadt-wien">Stadt Wien</a>',
       distance: 35,
       source: source,
     });
-    
+
     // Layer displaying the convex hull of the hovered cluster.
     const clusterHulls = new VectorLayer({
       source: clusterSource,
       style: clusterHullStyle,
     });
-    
+
     // Layer displaying the clusters and individual features.
     const clusters = new VectorLayer({
       source: clusterSource,
       style: clusterStyle,
     });
-    
+
     // Layer displaying the expanded view of overlapping cluster members.
     const clusterCircles = new VectorLayer({
       source: clusterSource,
       style: clusterCircleStyle,
     });
-    
+
     const groupLayer = this;
     groupLayer.getLayers().push(clusterHulls);
     groupLayer.getLayers().push(clusters);
     groupLayer.getLayers().push(clusterCircles);
-    
+
     this.pointermove__ = (event) => {
       clusters.getFeatures(event.pixel).then((features) => {
         if (features[0] !== hoverFeature) {
@@ -217,10 +213,11 @@ class clusterRegister extends LayerGroup {
       });
     };
     map.on('pointermove', this.pointermove__);
-    
+
     this.pointerclick__ = async (event) => {
       let features = await clusterCircles.getFeatures(event.pixel);
       if (features.length > 0) {
+        // eslint-disable-next-line no-console
         console.log(features[0].get('features')[0].getProperties());
       } else {
         features = await clusters.getFeatures(event.pixel);
@@ -247,6 +244,7 @@ class clusterRegister extends LayerGroup {
               view.fit(extent, {duration: 500, padding: [50, 50, 50, 50]});
             }
           } else {
+            // eslint-disable-next-line no-console
             console.log(clusterMembers[0].getProperties());
           }
         }
@@ -255,8 +253,8 @@ class clusterRegister extends LayerGroup {
     map.on('click', this.pointerclick__);
 
     this.removeMap = () => {
-      map.un("pointermove", this.pointermove__);
-      map.un("click", this.pointerclick__);
+      map.un('pointermove', this.pointermove__);
+      map.un('click', this.pointerclick__);
     };
   }
 }

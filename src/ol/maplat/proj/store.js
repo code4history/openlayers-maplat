@@ -2,12 +2,17 @@
  * @module ol/maplat/proj/store
  */
 
-import { Projection, addCoordinateTransforms, addProjection, transform,
-  get as getProjection } from "../../proj";
+import {
+  Projection,
+  addCoordinateTransforms,
+  addProjection,
+  get as getProjection,
+  transform,
+} from '../../proj.js';
 
 /**
  * @private
- * @type {string[]}
+ * @type {Array<string>}
  */
 const maplatProjectionStore = [];
 
@@ -17,22 +22,39 @@ function store(definition, toBase, fromBase) {
   if (maplatProjectionStore.indexOf(definition.code) < 0) {
     returnProjection = new Projection(definition);
     addProjection(returnProjection);
+    addCoordinateTransforms(returnProjection, 'EPSG:3857', toBase, fromBase);
     addCoordinateTransforms(
       returnProjection,
-      "EPSG:3857", toBase, fromBase
-    );
-    addCoordinateTransforms(
-      returnProjection,
-      "EPSG:4326",
-      xy => transform(transform(xy, returnProjection, "EPSG:3857"), "EPSG:3857", "EPSG:4326"),
-      lnglat => transform(transform(lnglat, "EPSG:4326", "EPSG:3857"), "EPSG:3857", returnProjection)
+      'EPSG:4326',
+      (xy) =>
+        transform(
+          transform(xy, returnProjection, 'EPSG:3857'),
+          'EPSG:3857',
+          'EPSG:4326'
+        ),
+      (lnglat) =>
+        transform(
+          transform(lnglat, 'EPSG:4326', 'EPSG:3857'),
+          'EPSG:3857',
+          returnProjection
+        )
     );
     maplatProjectionStore.forEach((projectionCode) => {
       addCoordinateTransforms(
         returnProjection,
         projectionCode,
-        xy => transform(transform(xy, returnProjection, "EPSG:3857"), "EPSG:3857", projectionCode),
-        xy => transform(transform(xy, projectionCode, "EPSG:3857"), "EPSG:3857", returnProjection)
+        (xy) =>
+          transform(
+            transform(xy, returnProjection, 'EPSG:3857'),
+            'EPSG:3857',
+            projectionCode
+          ),
+        (xy) =>
+          transform(
+            transform(xy, projectionCode, 'EPSG:3857'),
+            'EPSG:3857',
+            returnProjection
+          )
       );
     });
     maplatProjectionStore.push(definition.code);
@@ -42,6 +64,5 @@ function store(definition, toBase, fromBase) {
 
   return returnProjection;
 }
-
 
 export default store;

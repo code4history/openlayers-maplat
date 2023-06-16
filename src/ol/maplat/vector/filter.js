@@ -1,7 +1,7 @@
 /**
  * @module ol/maplat/vector/filter
  */
-import VectorSource from "../../source/Vector.js";
+import VectorSource from '../../source/Vector.js';
 
 /**
  * @typedef {Object} Options
@@ -20,15 +20,15 @@ function filter(source, options = {}) {
   const projectTo = options.projectTo;
   const retSource = new VectorSource();
   source.forEachFeature((f) => {
-    let retF = f.clone();
+    const retF = f.clone();
     if (projectTo) {
-      retF.setGeometry(retF.getGeometry().transform("EPSG:4326", projectTo));
+      retF.setGeometry(retF.getGeometry().transform('EPSG:4326', projectTo));
     }
     if (!extent || retF.getGeometry().intersectsExtent(extent)) {
       retSource.addFeature(retF);
     }
   });
   return retSource;
-};
+}
 
 export default filter;
