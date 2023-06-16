@@ -1,7 +1,7 @@
 /**
  * @module ol/maplat/source/Legacy
  */
-import Tin from '@maplat/tin';
+import Tin from '@maplat/tin/lib';
 import Zoomify from '../../source/Zoomify.js';
 import {
   Projection,
@@ -31,7 +31,7 @@ import {
  * @property {number|import("../../array.js").NearestDirectionFunction} [zDirection=0]
  * Choose whether to use tiles with a higher or lower zoom level when between integer
  * zoom levels. See {@link module:ol/tilegrid/TileGrid~TileGrid#getZForResolution}.
- * @property {import("@maplat/tin").Compiled} [tinCompiled] Compiled data of Maplat TIN (Triangle Irregular Network) setting.
+ * @property {import("@maplat/tin/lib").Compiled} [tinCompiled] Compiled data of Maplat TIN (Triangle Irregular Network) setting.
  * @property {string} [mapID] Map ID of Maplat data.
  */
 
