@@ -1,7 +1,7 @@
 import FormatGeoJSON from '../src/ol/format/GeoJSON.js';
 import FormatKML from '../src/ol/format/KML.js';
-import LegacySource from '../src/ol/maplat/source/Legacy.js';
 import Map from '../src/ol/Map.js';
+import MaplatSource from '../src/ol/maplat/source/Maplat.js';
 import VectorLayer from '../src/ol/layer/Vector.js';
 import VectorSource from '../src/ol/source/Vector.js';
 import View from '../src/ol/View.js';
@@ -23,7 +23,7 @@ const createSourceFunc = async (url) => {
 
   const mapDivide = url.split(/[\/\.]/);
   const mapID = mapDivide[mapDivide.length - 2];
-  const maplatSource = new LegacySource({
+  const maplatSource = new MaplatSource({
     size: settings.compiled.wh || [settings.width, settings.height],
     url: settings.url,
     tinCompiled: settings.compiled,
