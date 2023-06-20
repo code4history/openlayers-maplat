@@ -70,14 +70,14 @@ const dataSources = [
     ],
     vector: [
       {
+        url: 'data/kml/yagoe_contour.kml',
+        type: 'kml',
+      },
+      {
         url: 'https://raw.githubusercontent.com/code4history/TatebayashiStones/master/tatebayashi_stones.geojson',
         type: 'geojson',
         // eslint-disable-next-line no-undef
         style: iconSelector,
-      },
-      {
-        url: 'data/kml/yagoe_contour.kml',
-        type: 'kml',
       },
     ],
   },
@@ -157,7 +157,7 @@ const stockIconStyle = (clusterMember) => {
 
 let map;
 
-/*const sourceChange = (isOjozu) => {
+const sourceChange = (isOjozu) => {
   const fromSource = map ? map.getLayers().getArray()[0].getSource() : null;
   const toSource =
     isOjozu == 'ojozu'
@@ -247,7 +247,7 @@ let map;
   }
 
   clusterLayer.registerMap(filteredVector, map, stockIconStyle);
-};*/
+};
 
 const areaSelect = document.getElementById('area_select');
 const layerSelect = document.getElementById('layer_select');
@@ -278,7 +278,8 @@ function areaSelectFunc(area_id) {
     )}</option>`;
   });
   layerSelect.innerHTML = layerOptions;
-  layerSelectFunc(0, true);
+  //layerSelectFunc(0, true);
+  sourceChange2(0, true);
 }
 
 function layerSelectFunc(layer_id, clearMap) {
@@ -322,7 +323,7 @@ function layerSelectFunc(layer_id, clearMap) {
   });
 
   let addMapToCluster;
-  const layers = []; /*areaData.vector.map((vector) => {
+  const layers = areaData.vector.map((vector) => {
     const source = vector.source;
     const filteredSource = vectorFilter(source, {
       projectTo: toSource.getProjection(),
@@ -339,7 +340,7 @@ function layerSelectFunc(layer_id, clearMap) {
     return new VectorLayer({
       source: filteredSource,
     });
-  });*/
+  });
   layers.unshift(
     new WebGLTileLayer({
       title: localeSelector(toSource.get('title'), 'ja'),
@@ -360,11 +361,11 @@ function layerSelectFunc(layer_id, clearMap) {
       ]),
     });
   } else {
-    map.getLayers().forEach((layer) => {
+    /*map.getLayers().forEach((layer) => {
       if (layer.removeMap) {
         layer.removeMap();
       }
-    });
+    });*/
     map.setLayers(layers);
     map.setView(view);
   }
@@ -378,16 +379,102 @@ function layerSelectFunc(layer_id, clearMap) {
   }
 }
 
-/*sourceChange('ojozu');
+function sourceChange2(layer_id, clearMap) {
+  const area_id = areaSelect.value * 1;
+  const areaData = dataSources[area_id];
+  //if (areaData.raster) {console.log(areaData.raster[layer_id]);}
 
-document.getElementById('ojozu').onclick = function () {
-  sourceChange('ojozu');
+  const fromSource =
+    clearMap || !map ? null : map.getLayers().getArray()[0].getSource();
+  const toSource = areaData.raster[layer_id];
+
+  //const fromSource = map ? map.getLayers().getArray()[0].getSource() : null;
+  //const toSource =
+  //  isOjozu == 'ojozu'
+  //    ? ojozuSource
+  //    : isOjozu == 'akimoto'
+  //      ? akimotoSource
+  //      : onotokoSource;
+  let toCenter, toResolution, toRotation, toParam;
+  if (!map) {
+    toParam = {
+      center: transform(centerLngLat, 'EPSG:4326', toSource.getProjection()),
+      rotation: 0,
+      zoom: 0,
+    };
+  } else {
+    const fromView = map.getView();
+    const fromCenter = fromView.getCenter();
+    const fromRotation = fromView.getRotation();
+    const fromResolution = fromView.getResolution();
+    [toCenter, toRotation, toResolution] = viewportSwitcher(
+      fromCenter,
+      fromRotation,
+      fromResolution,
+      500,
+      fromSource.getProjection(),
+      toSource.getProjection()
+    );
+    toParam = {
+      center: toCenter,
+      rotation: toRotation,
+      resolution: toResolution,
+    };
+  }
+  toParam = Object.assign(toParam, {
+    projection: toSource.getProjection(),
+    constrainRotation: false,
+  });
+
+  const filteredVector = vectorFilter(vectorSource, {
+    projectTo: toSource.getProjection(),
+    extent: toSource.getProjection().getExtent(),
+  });
+  const filteredContour = vectorFilter(contourSource, {
+    projectTo: toSource.getProjection(),
+    extent: toSource.getProjection().getExtent(),
+  });
+  const layerContour = new VectorLayer({
+    source: filteredContour,
+    style: new Style({
+      stroke: new Stroke({
+        color: 'rgba(255, 255, 255, 0.7)',
+        width: 2,
+      }),
+    }),
+  });
+  const clusterLayer = new clusterRegister({});
+  const view = new View(toParam);
+
+  if (!map) {
+    map = new Map({
+      target: 'map',
+      layers: [
+        new WebGLTileLayer({
+          title: '館林御城図',
+          source: toSource,
+        }),
+        layerContour,
+        clusterLayer,
+      ],
+      view: view,
+      interactions: defaults({altShiftDragRotate: false}).extend([
+        new DragRotate({condition: altKeyOnly}),
+      ]),
+    });
+    view.fit(toSource.getProjection().getExtent(), {padding: [50, 50, 50, 50]});
+  } else {
+    map.getLayers().item(2).removeMap();
+    map.setLayers([
+      new WebGLTileLayer({
+        title: '館林御城図',
+        source: toSource,
+      }),
+      layerContour,
+      clusterLayer,
+    ]);
+    map.setView(view);
+  }
+
+  clusterLayer.registerMap(filteredVector, map, stockIconStyle);
 };
-
-document.getElementById('akimoto').onclick = function () {
-  sourceChange('akimoto');
-};
-
-document.getElementById('onotoko').onclick = function () {
-  sourceChange('onotoko');
-};*/
