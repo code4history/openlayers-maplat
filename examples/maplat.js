@@ -1,5 +1,6 @@
 import FormatGeoJSON from '../src/ol/format/GeoJSON.js';
 import FormatKML from '../src/ol/format/KML.js';
+import LayerGroup from '../src/ol/layer/Group.js';
 import Map from '../src/ol/Map.js';
 import MaplatSource from '../src/ol/maplat/source/Maplat.js';
 import VectorLayer from '../src/ol/layer/Vector.js';
@@ -17,7 +18,7 @@ import {transform} from '../src/ol/proj.js';
 
 const centerLngLat = [139.53671, 36.24668];
 
-const createSourceFunc = async (url) => {
+const createMaplatSource = async (url) => {
   const settingsReq = await fetch(url);
   const settings = await settingsReq.json();
 
@@ -33,32 +34,43 @@ const createSourceFunc = async (url) => {
   return maplatSource;
 };
 
+const createPoiSource = async (url) => {
+  const vectorReq = await fetch(url);
+  const vectorJSON = await vectorReq.json();
+  const vectorSource = new VectorSource({
+    features: new FormatGeoJSON().readFeatures(vectorJSON, {
+      featureProjection: 'EPSG:4326',
+      dataProjection: 'EPSG:4326',
+    }),
+  });
+  return vectorSource;
+};
+
+const createKmlSource = async (url) => {
+  const contourReq = await fetch(url);
+  const contourText = await contourReq.text();
+  const contourSource = new VectorSource({
+    features: new FormatKML().readFeatures(contourText, {
+      featureProjection: 'EPSG:4326',
+      dataProjection: 'EPSG:4326',
+    }),
+  });
+  return contourSource;
+};
+
 const [ojozuSource, akimotoSource, onotokoSource] = await Promise.all(
   [
     'https://s.maplat.jp/r/tatebayashimap/maps/tatebayashi_ojozu.json',
     'https://s.maplat.jp/r/tatebayashimap/maps/tatebayashi_castle_akimoto.json',
     'https://s.maplat.jp/r/tatebayashimap/maps/tatebayashi_satonuma_village_1.json',
-  ].map(async (url) => createSourceFunc(url))
+  ].map(async (url) => createMaplatSource(url))
 );
 
-const vectorReq = await fetch(
+const vectorSource = await createPoiSource(
   'https://raw.githubusercontent.com/code4history/TatebayashiStones/master/tatebayashi_stones.geojson'
 );
-const vectorJSON = await vectorReq.json();
-const vectorSource = new VectorSource({
-  features: new FormatGeoJSON().readFeatures(vectorJSON, {
-    featureProjection: 'EPSG:4326',
-    dataProjection: 'EPSG:4326',
-  }),
-});
-const contourReq = await fetch('data/kml/yagoe_contour.kml');
-const contourText = await contourReq.text();
-const contourSource = new VectorSource({
-  features: new FormatKML().readFeatures(contourText, {
-    featureProjection: 'EPSG:4326',
-    dataProjection: 'EPSG:4326',
-  }),
-});
+
+const contourSource = await createKmlSource('data/kml/yagoe_contour.kml');
 
 const stockIconHash = {};
 const stockIconStyle = (clusterMember) => {
