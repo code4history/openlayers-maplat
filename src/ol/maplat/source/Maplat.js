@@ -136,6 +136,8 @@ class Maplat extends Zoomify {
       reprojectionErrorThreshold: options.reprojectionErrorThreshold,
       transition: options.transition,
     });
+    // @ts-ignore
+    this.set('title', options.title);
     this.setTileUrlFunction((tileCoord) =>
       url
         .replace('{z}', `${tileCoord[0]}`)

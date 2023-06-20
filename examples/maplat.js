@@ -8,6 +8,7 @@ import VectorSource from '../src/ol/source/Vector.js';
 import View from '../src/ol/View.js';
 import WebGLTileLayer from '../src/ol/layer/WebGLTile.js';
 import clusterRegister from '../src/ol/maplat/clusterRegister.js';
+import localeSelector from '../src/ol/maplat/locale/selector.js';
 import vectorFilter from '../src/ol/maplat/vector/filter.js';
 import viewportSwitcher from '../src/ol/maplat/viewport/switcher.js';
 import {DragRotate} from '../src/ol/interaction.js';
@@ -25,6 +26,7 @@ const createMaplatSource = async (url) => {
   const mapDivide = url.split(/[\/\.]/);
   const mapID = mapDivide[mapDivide.length - 2];
   const maplatSource = new MaplatSource({
+    title: settings.title,
     size: settings.compiled.wh || [settings.width, settings.height],
     url: settings.url,
     tinCompiled: settings.compiled,
@@ -58,12 +60,77 @@ const createKmlSource = async (url) => {
   return contourSource;
 };
 
+const dataSources = [
+  {
+    area: '館林',
+    raster: [
+      'https://s.maplat.jp/r/tatebayashimap/maps/tatebayashi_ojozu.json',
+      'https://s.maplat.jp/r/tatebayashimap/maps/tatebayashi_castle_akimoto.json',
+      'https://s.maplat.jp/r/tatebayashimap/maps/tatebayashi_satonuma_village_1.json',
+    ],
+    vector: [
+      {
+        url: 'https://raw.githubusercontent.com/code4history/TatebayashiStones/master/tatebayashi_stones.geojson',
+        type: 'geojson',
+        // eslint-disable-next-line no-undef
+        style: iconSelector,
+      },
+      {
+        url: 'data/kml/yagoe_contour.kml',
+        type: 'kml',
+      },
+    ],
+  },
+  {
+    area: '奈良',
+    raster: [
+      'https://s.maplat.jp/r/naramap/maps/nara_saiken_ndl.json',
+      'https://s.maplat.jp/r/naramap/maps/nara_ezuya.json',
+    ],
+    vector: [
+      {
+        url: 'https://raw.githubusercontent.com/code4history/JizoProject/master/jizo_project.geojson',
+        type: 'geojson',
+        // eslint-disable-next-line no-undef
+        style: iconSelector,
+      },
+    ],
+  },
+  {
+    area: '姫路',
+  },
+];
+await Promise.all(
+  dataSources.map(async (dataSource) => {
+    if (dataSource.raster) {
+      dataSource.raster = await Promise.all(
+        dataSource.raster.map((url) => createMaplatSource(url))
+      );
+    }
+    if (dataSource.vector) {
+      dataSource.vector = await Promise.all(
+        dataSource.vector.map(async (vector) => {
+          const source =
+            vector.type == 'geojson'
+              ? await createPoiSource(vector.url)
+              : await createKmlSource(vector.url);
+          return {
+            source: source,
+            style: vector.style,
+          };
+        })
+      );
+    }
+  })
+);
+console.log(dataSources);
+
 const [ojozuSource, akimotoSource, onotokoSource] = await Promise.all(
   [
     'https://s.maplat.jp/r/tatebayashimap/maps/tatebayashi_ojozu.json',
     'https://s.maplat.jp/r/tatebayashimap/maps/tatebayashi_castle_akimoto.json',
     'https://s.maplat.jp/r/tatebayashimap/maps/tatebayashi_satonuma_village_1.json',
-  ].map(async (url) => createMaplatSource(url))
+  ].map(async (url) => await createMaplatSource(url))
 );
 
 const vectorSource = await createPoiSource(
@@ -90,7 +157,7 @@ const stockIconStyle = (clusterMember) => {
 
 let map;
 
-const sourceChange = (isOjozu) => {
+/*const sourceChange = (isOjozu) => {
   const fromSource = map ? map.getLayers().getArray()[0].getSource() : null;
   const toSource =
     isOjozu == 'ojozu'
@@ -180,9 +247,138 @@ const sourceChange = (isOjozu) => {
   }
 
   clusterLayer.registerMap(filteredVector, map, stockIconStyle);
-};
+};*/
 
-sourceChange('ojozu');
+const areaSelect = document.getElementById('area_select');
+const layerSelect = document.getElementById('layer_select');
+areaSelect.onchange = function () {
+  const area = areaSelect.value;
+  // eslint-disable-next-line no-console
+  areaSelectFunc(area * 1);
+};
+layerSelect.onchange = function () {
+  const layer = layerSelect.value;
+  // eslint-disable-next-line no-console
+  layerSelectFunc(layer * 1);
+};
+let areaOptions = '';
+dataSources.forEach((data, index) => {
+  areaOptions = `${areaOptions}<option value="${index}">${data.area}</option>`;
+});
+areaSelect.innerHTML = areaOptions;
+areaSelectFunc(0);
+
+function areaSelectFunc(area_id) {
+  const areaData = dataSources[area_id];
+  let layerOptions = '';
+  areaData.raster.forEach((raster, index) => {
+    layerOptions = `${layerOptions}<option value="${index}">${localeSelector(
+      raster.get('title'),
+      'ja'
+    )}</option>`;
+  });
+  layerSelect.innerHTML = layerOptions;
+  layerSelectFunc(0, true);
+}
+
+function layerSelectFunc(layer_id, clearMap) {
+  const area_id = areaSelect.value * 1;
+  const areaData = dataSources[area_id];
+  //if (areaData.raster) {console.log(areaData.raster[layer_id]);}
+
+  const fromSource =
+    clearMap || !map ? null : map.getLayers().getArray()[0].getSource();
+  const toSource = areaData.raster[layer_id];
+
+  let toCenter, toResolution, toRotation, toParam;
+  if (!fromSource) {
+    toParam = {
+      center: transform(centerLngLat, 'EPSG:4326', toSource.getProjection()),
+      rotation: 0,
+      zoom: 0,
+    };
+  } else {
+    const fromView = map.getView();
+    const fromCenter = fromView.getCenter();
+    const fromRotation = fromView.getRotation();
+    const fromResolution = fromView.getResolution();
+    [toCenter, toRotation, toResolution] = viewportSwitcher(
+      fromCenter,
+      fromRotation,
+      fromResolution,
+      500,
+      fromSource.getProjection(),
+      toSource.getProjection()
+    );
+    toParam = {
+      center: toCenter,
+      rotation: toRotation,
+      resolution: toResolution,
+    };
+  }
+  toParam = Object.assign(toParam, {
+    projection: toSource.getProjection(),
+    constrainRotation: false,
+  });
+
+  let addMapToCluster;
+  const layers = []; /*areaData.vector.map((vector) => {
+    const source = vector.source;
+    const filteredSource = vectorFilter(source, {
+      projectTo: toSource.getProjection(),
+      extent: toSource.getProjection().getExtent(),
+    });
+    if (vector.style) {
+      const clusterLayer = new clusterRegister({});
+      const style = vector.style;
+      addMapToCluster = (map) => {
+        clusterLayer.registerMap(filteredSource, map, style);
+      };
+      return clusterLayer;
+    }
+    return new VectorLayer({
+      source: filteredSource,
+    });
+  });*/
+  layers.unshift(
+    new WebGLTileLayer({
+      title: localeSelector(toSource.get('title'), 'ja'),
+      source: toSource,
+    })
+  );
+  console.log(layers);
+
+  const view = new View(toParam);
+
+  if (!map) {
+    map = new Map({
+      target: 'map',
+      layers: layers,
+      view: view,
+      interactions: defaults({altShiftDragRotate: false}).extend([
+        new DragRotate({condition: altKeyOnly}),
+      ]),
+    });
+  } else {
+    map.getLayers().forEach((layer) => {
+      if (layer.removeMap) {
+        layer.removeMap();
+      }
+    });
+    map.setLayers(layers);
+    map.setView(view);
+  }
+
+  if (!fromSource) {
+    view.fit(toSource.getProjection().getExtent(), {padding: [50, 50, 50, 50]});
+  }
+
+  if (addMapToCluster) {
+    addMapToCluster(map);
+  }
+}
+
+/*sourceChange('ojozu');
 
 document.getElementById('ojozu').onclick = function () {
   sourceChange('ojozu');
@@ -194,4 +390,4 @@ document.getElementById('akimoto').onclick = function () {
 
 document.getElementById('onotoko').onclick = function () {
   sourceChange('onotoko');
-};
+};*/
