@@ -60,6 +60,22 @@ const createKmlSource = async (url) => {
   return contourSource;
 };
 
+const stockIconHash = {};
+const stockIconStyle = (clusterMember) => {
+  // eslint-disable-next-line no-undef
+  const key = iconSelector(clusterMember);
+  if (!stockIconHash[key]) {
+    stockIconHash[key] = new Icon({
+      src: key,
+      anchor: [0.5, 1.0],
+    });
+  }
+  return new Style({
+    geometry: clusterMember.getGeometry(),
+    image: stockIconHash[key],
+  });
+};
+
 const dataSources = [
   {
     area: '館林',
@@ -76,8 +92,7 @@ const dataSources = [
       {
         url: 'https://raw.githubusercontent.com/code4history/TatebayashiStones/master/tatebayashi_stones.geojson',
         type: 'geojson',
-        // eslint-disable-next-line no-undef
-        style: iconSelector,
+        style: stockIconStyle,
       },
     ],
   },
@@ -92,7 +107,7 @@ const dataSources = [
         url: 'https://raw.githubusercontent.com/code4history/JizoProject/master/jizo_project.geojson',
         type: 'geojson',
         // eslint-disable-next-line no-undef
-        style: iconSelector,
+        style: stockIconStyle,
       },
     ],
   },
@@ -123,131 +138,8 @@ await Promise.all(
     }
   })
 );
-console.log(dataSources);
-
-const [ojozuSource, akimotoSource, onotokoSource] = await Promise.all(
-  [
-    'https://s.maplat.jp/r/tatebayashimap/maps/tatebayashi_ojozu.json',
-    'https://s.maplat.jp/r/tatebayashimap/maps/tatebayashi_castle_akimoto.json',
-    'https://s.maplat.jp/r/tatebayashimap/maps/tatebayashi_satonuma_village_1.json',
-  ].map(async (url) => await createMaplatSource(url))
-);
-
-const vectorSource = await createPoiSource(
-  'https://raw.githubusercontent.com/code4history/TatebayashiStones/master/tatebayashi_stones.geojson'
-);
-
-const contourSource = await createKmlSource('data/kml/yagoe_contour.kml');
-
-const stockIconHash = {};
-const stockIconStyle = (clusterMember) => {
-  // eslint-disable-next-line no-undef
-  const key = iconSelector(clusterMember);
-  if (!stockIconHash[key]) {
-    stockIconHash[key] = new Icon({
-      src: key,
-      anchor: [0.5, 1.0],
-    });
-  }
-  return new Style({
-    geometry: clusterMember.getGeometry(),
-    image: stockIconHash[key],
-  });
-};
 
 let map;
-
-const sourceChange = (isOjozu) => {
-  const fromSource = map ? map.getLayers().getArray()[0].getSource() : null;
-  const toSource =
-    isOjozu == 'ojozu'
-      ? ojozuSource
-      : isOjozu == 'akimoto'
-      ? akimotoSource
-      : onotokoSource;
-  let toCenter, toResolution, toRotation, toParam;
-  if (!map) {
-    toParam = {
-      center: transform(centerLngLat, 'EPSG:4326', toSource.getProjection()),
-      rotation: 0,
-      zoom: 0,
-    };
-  } else {
-    const fromView = map.getView();
-    const fromCenter = fromView.getCenter();
-    const fromRotation = fromView.getRotation();
-    const fromResolution = fromView.getResolution();
-    [toCenter, toRotation, toResolution] = viewportSwitcher(
-      fromCenter,
-      fromRotation,
-      fromResolution,
-      500,
-      fromSource.getProjection(),
-      toSource.getProjection()
-    );
-    toParam = {
-      center: toCenter,
-      rotation: toRotation,
-      resolution: toResolution,
-    };
-  }
-  toParam = Object.assign(toParam, {
-    projection: toSource.getProjection(),
-    constrainRotation: false,
-  });
-
-  const filteredVector = vectorFilter(vectorSource, {
-    projectTo: toSource.getProjection(),
-    extent: toSource.getProjection().getExtent(),
-  });
-  const filteredContour = vectorFilter(contourSource, {
-    projectTo: toSource.getProjection(),
-    extent: toSource.getProjection().getExtent(),
-  });
-  const layerContour = new VectorLayer({
-    source: filteredContour,
-    style: new Style({
-      stroke: new Stroke({
-        color: 'rgba(255, 255, 255, 0.7)',
-        width: 2,
-      }),
-    }),
-  });
-  const clusterLayer = new clusterRegister({});
-  const view = new View(toParam);
-
-  if (!map) {
-    map = new Map({
-      target: 'map',
-      layers: [
-        new WebGLTileLayer({
-          title: '館林御城図',
-          source: toSource,
-        }),
-        layerContour,
-        clusterLayer,
-      ],
-      view: view,
-      interactions: defaults({altShiftDragRotate: false}).extend([
-        new DragRotate({condition: altKeyOnly}),
-      ]),
-    });
-    view.fit(toSource.getProjection().getExtent(), {padding: [50, 50, 50, 50]});
-  } else {
-    map.getLayers().item(2).removeMap();
-    map.setLayers([
-      new WebGLTileLayer({
-        title: '館林御城図',
-        source: toSource,
-      }),
-      layerContour,
-      clusterLayer,
-    ]);
-    map.setView(view);
-  }
-
-  clusterLayer.registerMap(filteredVector, map, stockIconStyle);
-};
 
 const areaSelect = document.getElementById('area_select');
 const layerSelect = document.getElementById('layer_select');
@@ -278,14 +170,12 @@ function areaSelectFunc(area_id) {
     )}</option>`;
   });
   layerSelect.innerHTML = layerOptions;
-  //layerSelectFunc(0, true);
-  sourceChange2(0, true);
+  layerSelectFunc(0, true);
 }
 
 function layerSelectFunc(layer_id, clearMap) {
   const area_id = areaSelect.value * 1;
   const areaData = dataSources[area_id];
-  //if (areaData.raster) {console.log(areaData.raster[layer_id]);}
 
   const fromSource =
     clearMap || !map ? null : map.getLayers().getArray()[0].getSource();
@@ -321,6 +211,7 @@ function layerSelectFunc(layer_id, clearMap) {
     projection: toSource.getProjection(),
     constrainRotation: false,
   });
+  const view = new View(toParam);
 
   let addMapToCluster;
   const layers = areaData.vector.map((vector) => {
@@ -331,9 +222,8 @@ function layerSelectFunc(layer_id, clearMap) {
     });
     if (vector.style) {
       const clusterLayer = new clusterRegister({});
-      const style = vector.style;
-      addMapToCluster = (map) => {
-        clusterLayer.registerMap(filteredSource, map, style);
+      addMapToCluster = () => {
+        clusterLayer.registerMap(filteredSource, map, vector.style);
       };
       return clusterLayer;
     }
@@ -341,15 +231,13 @@ function layerSelectFunc(layer_id, clearMap) {
       source: filteredSource,
     });
   });
+
   layers.unshift(
     new WebGLTileLayer({
       title: localeSelector(toSource.get('title'), 'ja'),
       source: toSource,
     })
   );
-  console.log(layers);
-
-  const view = new View(toParam);
 
   if (!map) {
     map = new Map({
@@ -361,120 +249,18 @@ function layerSelectFunc(layer_id, clearMap) {
       ]),
     });
   } else {
-    /*map.getLayers().forEach((layer) => {
+    map.getLayers().forEach((layer) => {
       if (layer.removeMap) {
         layer.removeMap();
       }
-    });*/
+    });
     map.setLayers(layers);
     map.setView(view);
   }
-
+  if (addMapToCluster) {
+    addMapToCluster();
+  }
   if (!fromSource) {
     view.fit(toSource.getProjection().getExtent(), {padding: [50, 50, 50, 50]});
   }
-
-  if (addMapToCluster) {
-    addMapToCluster(map);
-  }
 }
-
-function sourceChange2(layer_id, clearMap) {
-  const area_id = areaSelect.value * 1;
-  const areaData = dataSources[area_id];
-  //if (areaData.raster) {console.log(areaData.raster[layer_id]);}
-
-  const fromSource =
-    clearMap || !map ? null : map.getLayers().getArray()[0].getSource();
-  const toSource = areaData.raster[layer_id];
-
-  //const fromSource = map ? map.getLayers().getArray()[0].getSource() : null;
-  //const toSource =
-  //  isOjozu == 'ojozu'
-  //    ? ojozuSource
-  //    : isOjozu == 'akimoto'
-  //      ? akimotoSource
-  //      : onotokoSource;
-  let toCenter, toResolution, toRotation, toParam;
-  if (!map) {
-    toParam = {
-      center: transform(centerLngLat, 'EPSG:4326', toSource.getProjection()),
-      rotation: 0,
-      zoom: 0,
-    };
-  } else {
-    const fromView = map.getView();
-    const fromCenter = fromView.getCenter();
-    const fromRotation = fromView.getRotation();
-    const fromResolution = fromView.getResolution();
-    [toCenter, toRotation, toResolution] = viewportSwitcher(
-      fromCenter,
-      fromRotation,
-      fromResolution,
-      500,
-      fromSource.getProjection(),
-      toSource.getProjection()
-    );
-    toParam = {
-      center: toCenter,
-      rotation: toRotation,
-      resolution: toResolution,
-    };
-  }
-  toParam = Object.assign(toParam, {
-    projection: toSource.getProjection(),
-    constrainRotation: false,
-  });
-
-  const filteredVector = vectorFilter(vectorSource, {
-    projectTo: toSource.getProjection(),
-    extent: toSource.getProjection().getExtent(),
-  });
-  const filteredContour = vectorFilter(contourSource, {
-    projectTo: toSource.getProjection(),
-    extent: toSource.getProjection().getExtent(),
-  });
-  const layerContour = new VectorLayer({
-    source: filteredContour,
-    style: new Style({
-      stroke: new Stroke({
-        color: 'rgba(255, 255, 255, 0.7)',
-        width: 2,
-      }),
-    }),
-  });
-  const clusterLayer = new clusterRegister({});
-  const view = new View(toParam);
-
-  if (!map) {
-    map = new Map({
-      target: 'map',
-      layers: [
-        new WebGLTileLayer({
-          title: '館林御城図',
-          source: toSource,
-        }),
-        layerContour,
-        clusterLayer,
-      ],
-      view: view,
-      interactions: defaults({altShiftDragRotate: false}).extend([
-        new DragRotate({condition: altKeyOnly}),
-      ]),
-    });
-    view.fit(toSource.getProjection().getExtent(), {padding: [50, 50, 50, 50]});
-  } else {
-    map.getLayers().item(2).removeMap();
-    map.setLayers([
-      new WebGLTileLayer({
-        title: '館林御城図',
-        source: toSource,
-      }),
-      layerContour,
-      clusterLayer,
-    ]);
-    map.setView(view);
-  }
-
-  clusterLayer.registerMap(filteredVector, map, stockIconStyle);
-};
