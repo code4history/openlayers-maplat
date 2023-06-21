@@ -105,13 +105,16 @@ const dataSources = [
       {
         url: 'https://raw.githubusercontent.com/code4history/JizoProject/master/jizo_project.geojson',
         type: 'geojson',
-        // eslint-disable-next-line no-undef
         style: stockIconStyle,
       },
     ],
   },
   {
     area: '姫路',
+    raster: [
+      'https://s.maplat.jp/r/himejimap/maps/Jissoku_Himeji_Shigai.json',
+      //'https://s.maplat.jp/r/naramap/maps/nara_ezuya.json',
+    ],
   },
 ];
 await Promise.all(
@@ -213,23 +216,25 @@ function layerSelectFunc(layer_id, clearMap) {
   const view = new View(toParam);
 
   let addMapToCluster;
-  const layers = areaData.vector.map((vector) => {
-    const source = vector.source;
-    const filteredSource = vectorFilter(source, {
-      projectTo: toSource.getProjection(),
-      extent: toSource.getProjection().getExtent(),
-    });
-    if (vector.style) {
-      const clusterLayer = new clusterRegister({});
-      addMapToCluster = () => {
-        clusterLayer.registerMap(filteredSource, map, vector.style);
-      };
-      return clusterLayer;
-    }
-    return new VectorLayer({
-      source: filteredSource,
-    });
-  });
+  const layers = areaData.vector
+    ? areaData.vector.map((vector) => {
+        const source = vector.source;
+        const filteredSource = vectorFilter(source, {
+          projectTo: toSource.getProjection(),
+          extent: toSource.getProjection().getExtent(),
+        });
+        if (vector.style) {
+          const clusterLayer = new clusterRegister({});
+          addMapToCluster = () => {
+            clusterLayer.registerMap(filteredSource, map, vector.style);
+          };
+          return clusterLayer;
+        }
+        return new VectorLayer({
+          source: filteredSource,
+        });
+      })
+    : [];
 
   layers.unshift(
     new WebGLTileLayer({
