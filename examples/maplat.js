@@ -82,7 +82,7 @@ const dataSources = [
     ],
     vector: [
       {
-        url: 'data/kml/yagoe_contour.kml',
+        url: 'data/maplat/yagoe_contour.kml',
         type: 'kml',
       },
       {
