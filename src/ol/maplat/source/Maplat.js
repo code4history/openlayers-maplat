@@ -224,5 +224,4 @@ function createWorldFileBase(settings) {
   ];
 }
 
-
 export default Maplat;
