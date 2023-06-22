@@ -1,7 +1,7 @@
 /**
  * @module ol/maplat/viewport/switcher
  */
-import {transform} from '../../proj.js';
+import {transform} from 'ol/proj.js';
 
 const thetas = [0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75].map((pow) => {
   return pow * Math.PI;

@@ -2,7 +2,7 @@
  * @module ol/maplat/source/Maplat
  */
 import Tin from '@maplat/tin/lib/index.js';
-import Zoomify from '../../source/Zoomify.js';
+import Zoomify from 'ol/source/Zoomify.js';
 import proj4 from 'proj4';
 import {
   Projection,
@@ -10,7 +10,7 @@ import {
   addProjection,
   get as getProjection,
   transform,
-} from '../../proj.js';
+} from 'ol/proj.js';
 proj4.defs([
   ['TOKYO', '+proj=longlat +ellps=bessel +towgs84=-146.336,506.832,680.254'],
   ['JCP:NAD27', '+proj=longlat +ellps=clrk66 +datum=NAD27 +no_defs'],
@@ -30,7 +30,7 @@ proj4.defs([
 
 /**
  * @typedef {Object} maplatOptions
- * @property {import("../../source/Source.js").AttributionLike} [attributions] Attributions.
+ * @property {import("ol/source/Source").AttributionLike} [attributions] Attributions.
  * @property {number} [cacheSize] Initial tile cache size. Will auto-grow to hold at least the number of tiles in the viewport.
  * @property {null|string} [crossOrigin] The `crossOrigin` attribute for loaded images.  Note that
  * you must provide a `crossOrigin` value  you want to access pixel data with the Canvas renderer.
@@ -41,11 +41,11 @@ proj4.defs([
  * @property {number} [reprojectionErrorThreshold=0.5] Maximum allowed reprojection error (in pixels).
  * Higher values can increase reprojection performance, but decrease precision.
  * @property {string} url URL template of the Maplat tile.
- * @property {import("../../size.js").Size} size Size.
+ * @property {import("ol/size").Size} size Size.
  * @property {number} [transition] Duration of the opacity transition for rendering.
  * To disable the opacity transition, pass `transition: 0`.
  * @property {number} [tileSize=256] Tile size. Same tile size is used for all zoom levels.
- * @property {number|import("../../array.js").NearestDirectionFunction} [zDirection=0]
+ * @property {number|import("ol/array").NearestDirectionFunction} [zDirection=0]
  * Choose whether to use tiles with a higher or lower zoom level when between integer
  * zoom levels. See {@link module:ol/tilegrid/TileGrid~TileGrid#getZForResolution}.
  * @property {import("@maplat/tin/lib/index.js").Compiled} [tinCompiled] Compiled data of Maplat TIN (Triangle Irregular Network) setting.
@@ -171,7 +171,7 @@ class Maplat extends Zoomify {
     );
   }
 
-  static async init(options) { }
+  //static async init(options) { }
 }
 
 function createMaplatLegacy(settings) {

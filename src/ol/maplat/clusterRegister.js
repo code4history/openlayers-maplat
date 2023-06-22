@@ -1,15 +1,15 @@
 /**
  * @module ol/maplat/clusterRegister
  */
-import Feature from '../Feature.js';
-import LayerGroup from '../layer/Group.js';
+import Feature from 'ol/Feature.js';
+import LayerGroup from 'ol/layer/Group.js';
 // @ts-ignore
 import monotoneChainConvexHull from 'monotone-chain-convex-hull';
-import {Circle as CircleStyle, Fill, Stroke, Style, Text} from '../style.js';
-import {Cluster} from '../source.js';
-import {LineString, Point, Polygon} from '../geom.js';
-import {Vector as VectorLayer} from '../layer.js';
-import {createEmpty, extend, getHeight, getWidth} from '../extent.js';
+import {Circle as CircleStyle, Fill, Stroke, Style, Text} from 'ol/style.js';
+import {Cluster} from 'ol/source.js';
+import {LineString, Point, Polygon} from 'ol/geom.js';
+import {Vector as VectorLayer} from 'ol/layer.js';
+import {createEmpty, extend, getHeight, getWidth} from 'ol/extent.js';
 
 class clusterRegister extends LayerGroup {
   pointermove__;

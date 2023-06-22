@@ -8,7 +8,7 @@ import {
   addProjection,
   get as getProjection,
   transform,
-} from '../../proj.js';
+} from 'ol/proj.js';
 
 /**
  * @private

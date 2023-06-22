@@ -1,20 +1,20 @@
-import FormatGeoJSON from '../src/ol/format/GeoJSON.js';
-import FormatKML from '../src/ol/format/KML.js';
-import Map from '../src/ol/Map.js';
+import FormatGeoJSON from 'ol/format/GeoJSON.js';
+import FormatKML from 'ol/format/KML.js';
+import Map from 'ol/Map.js';
 import MaplatSource from '../src/ol/maplat/source/Maplat.js';
-import VectorLayer from '../src/ol/layer/Vector.js';
-import VectorSource from '../src/ol/source/Vector.js';
-import View from '../src/ol/View.js';
-import WebGLTileLayer from '../src/ol/layer/WebGLTile.js';
+import VectorLayer from 'ol/layer/Vector.js';
+import VectorSource from 'ol/source/Vector.js';
+import View from 'ol/View.js';
+import WebGLTileLayer from 'ol/layer/WebGLTile.js';
 import clusterRegister from '../src/ol/maplat/clusterRegister.js';
 import localeSelector from '../src/ol/maplat/locale/selector.js';
 import vectorFilter from '../src/ol/maplat/vector/filter.js';
 import viewportSwitcher from '../src/ol/maplat/viewport/switcher.js';
-import {DragRotate} from '../src/ol/interaction.js';
-import {Icon, Style} from '../src/ol/style.js';
-import {altKeyOnly} from '../src/ol/events/condition.js';
-import {defaults} from '../src/ol/interaction/defaults.js';
-import {transform} from '../src/ol/proj.js';
+import {DragRotate} from 'ol/interaction.js';
+import {Icon, Style} from 'ol/style.js';
+import {altKeyOnly} from 'ol/events/condition.js';
+import {defaults} from 'ol/interaction/defaults.js';
+import {transform} from 'ol/proj.js';
 
 const centerLngLat = [139.53671, 36.24668];
 

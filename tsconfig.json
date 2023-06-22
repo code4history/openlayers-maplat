@@ -58,5 +58,5 @@
   "include": [
     "types/**/*.ts",
     "src/ol/**/*.js"
-  ]
+, "src/ol/maplat/source/Maplat.js"  ]
 }
