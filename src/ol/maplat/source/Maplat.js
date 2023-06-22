@@ -197,17 +197,17 @@ function createWorldFileBase(settings) {
   const e = mapCoordParams.yScale;
   const f = mapCoordParams.yOrigin;
   const toMapCoord = (xy) => {
-    return [a * xy[0] + b * xy[1] + c, d * xy[0] + e * -xy[1] + f];
+    return [a * xy[0] - b * xy[1] + c, d * xy[0] - e * xy[1] + f];
   };
   const fromMapCoord = (xy) => {
     return [
       (xy[0] * e - xy[1] * b - c * e + f * b) / (a * e - b * d),
-      -(xy[0] * d - xy[1] * a - c * d + f * a) / (b * d - a * e),
+      -(xy[1] * a - xy[0] * d - f * a + c * d) / (a * e - b * d),
     ];
   };
+
   const map2nad = proj4('JCP:ZONEB:NAD27', 'JCP:NAD27');
   const tky2merc = proj4('TOKYO', 'EPSG:3857');
-  //const tky2merc = proj4('JCP:NAD27', 'EPSG:3857');
   return [
     (xy) => {
       const mapCoord = toMapCoord(xy);
@@ -224,19 +224,5 @@ function createWorldFileBase(settings) {
   ];
 }
 
-/*
-X = ax + by + c
-Y = dx + ey + f
 
-eX = aex + bey + ce
-bY = bdx + bey + bf
-eX – bY = (ae – bd)x + (ce – bf)
-x = (eX – bY – ce + bf) / (ae – bd)
-
-dX = adx + bdy + cd
-aY = adx + aey + af
-dX – aY = (bd – ae)y + (cd – af)
-y = (dX – aY – cd + af) / (bd – ae) = (aY – dX – af + cd) / (ae – bd)
-
-*/
 export default Maplat;
