@@ -2,7 +2,7 @@
   "title": "姫路 (JAPAN CITY PLANS)",
   "version": "3.0230620",
   "maplatType": {
-    "mapCoord": "JCP:ZONE2",
+    "mapCoord": "JCP:ZONEB",
     "interfaceCoord": "EPSG:3857",
     "tileType": "PIXEL",
     "warpMethod": "NONE"

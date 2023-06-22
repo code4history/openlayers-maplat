@@ -25,10 +25,7 @@ const createMaplatSource = async (url) => {
   const mapDivide = url.split(/[\/\.]/);
   const mapID = mapDivide[mapDivide.length - 2];
   const maplatSource = new MaplatSource({
-    title: settings.title,
-    size: settings.compiled.wh || [settings.width, settings.height],
-    url: settings.url,
-    tinCompiled: settings.compiled,
+    settings: settings,
     mapID: mapID,
   });
 
@@ -113,7 +110,7 @@ const dataSources = [
     area: '姫路',
     raster: [
       'https://s.maplat.jp/r/himejimap/maps/Jissoku_Himeji_Shigai.json',
-      //'https://s.maplat.jp/r/naramap/maps/nara_ezuya.json',
+      'data/maplat/txu-oclc-6565467.json',
     ],
   },
 ];
