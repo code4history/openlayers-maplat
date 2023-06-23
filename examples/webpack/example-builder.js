@@ -307,7 +307,7 @@ export default class ExampleBuilder {
     const readOptions = {encoding: 'utf8'};
 
     // add in script tag
-    const jsName = `${data.name}.js`;
+    const jsName = `${data.name}.ts`;
     const jsPath = path.join(data.dir, jsName);
     let jsSource = await fse.readFile(jsPath, {encoding: 'utf8'});
     jsSource = this.transformJsSource(this.cloakSource(jsSource, data.cloak));

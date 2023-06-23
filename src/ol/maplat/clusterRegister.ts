@@ -3,7 +3,6 @@
  */
 import Feature from 'ol/Feature.js';
 import LayerGroup from 'ol/layer/Group.js';
-// @ts-ignore
 import monotoneChainConvexHull from 'monotone-chain-convex-hull';
 import {Circle as CircleStyle, Fill, Stroke, Style, Text} from 'ol/style.js';
 import {Cluster} from 'ol/source.js';
@@ -141,7 +140,7 @@ class clusterRegister extends LayerGroup {
         feature.getGeometry().getCoordinates()
       );
       return new Style({
-        geometry: new Polygon([monotoneChainConvexHull(points)]),
+        geometry: new Polygon([(monotoneChainConvexHull as any)(points)]),
         fill: convexHullFill,
         stroke: convexHullStroke,
       });
@@ -252,7 +251,7 @@ class clusterRegister extends LayerGroup {
     };
     map.on('click', this.pointerclick__);
 
-    this.removeMap = () => {
+    (this as any).removeMap = () => {
       map.un('pointermove', this.pointermove__);
       map.un('click', this.pointerclick__);
     };

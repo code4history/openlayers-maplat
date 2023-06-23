@@ -1,4 +1,4 @@
-function iconSelector(data) {
+export default function iconSelector(data) {
   const type = data.get("type");
   const title = data.get("title");
   const shape = data.get("shape");

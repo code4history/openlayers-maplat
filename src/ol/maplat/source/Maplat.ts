@@ -1,7 +1,7 @@
 /**
  * @module ol/maplat/source/Maplat
  */
-import Tin from '@maplat/tin/lib/index.js';
+import Tin from '@maplat/tin';
 import Zoomify from 'ol/source/Zoomify.js';
 import proj4 from 'proj4';
 import {
@@ -74,7 +74,7 @@ class Maplat extends Zoomify {
     const title = settings.title;
     // @ts-ignore
     const size = settings.width
-      ? [settings.width, settings.height]
+      ? [(settings as any).width, settings.height]
       : settings.compiled.wh;
     // @ts-ignore
     const url = settings.url;
@@ -175,7 +175,7 @@ class Maplat extends Zoomify {
 }
 
 function createMaplatLegacy(settings) {
-  const tin = new Tin();
+  const tin = new (Tin as any)();
   // @ts-ignore
   tin.setCompiled(settings.compiled);
 

@@ -17,19 +17,25 @@ export default {
       .filter((name) => /^(?!index).*\.html$/.test(name))
       .map((name) => name.replace(/\.html$/, ''))
       .forEach((example) => {
-        entry[example] = `./${example}.js`;
+        entry[example] = `./${example}.ts`;
       });
     return entry;
   },
   stats: 'minimal',
   module: {
     rules: [
-      {
+      /*{
         test: /\.js$/,
         use: {
           loader: path.join(src, 'webpack', 'worker-loader.cjs'),
         },
         include: [path.join(root, 'src', 'ol', 'worker')],
+      },*/
+      {
+        // 拡張子 .ts の場合
+        test: /\.ts$/,
+        // TypeScript をコンパイルする
+        use: 'ts-loader',
       },
     ],
   },
@@ -83,6 +89,7 @@ export default {
       http: false,
       https: false,
     },
+    extensions: ['.ts', '.js'],
     /*alias: {
       // allow imports from 'ol/module' instead of specifiying the source path
       ol: path.join(root, 'src', 'ol'),

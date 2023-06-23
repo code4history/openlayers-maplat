@@ -15,6 +15,7 @@ import {Icon, Style} from 'ol/style.js';
 import {altKeyOnly} from 'ol/events/condition.js';
 import {defaults} from 'ol/interaction/defaults.js';
 import {transform} from 'ol/proj.js';
+import iconSelector from './resources/maplat-tools.js';
 
 const centerLngLat = [139.53671, 36.24668];
 
@@ -27,7 +28,7 @@ const createMaplatSource = async (url) => {
   const maplatSource = new MaplatSource({
     settings: settings,
     mapID: mapID,
-  });
+  } as any);
 
   return maplatSource;
 };
@@ -117,12 +118,12 @@ const dataSources = [
 await Promise.all(
   dataSources.map(async (dataSource) => {
     if (dataSource.raster) {
-      dataSource.raster = await Promise.all(
+      (dataSource as any).raster = await Promise.all(
         dataSource.raster.map((url) => createMaplatSource(url))
       );
     }
     if (dataSource.vector) {
-      dataSource.vector = await Promise.all(
+      (dataSource as any).vector = await Promise.all(
         dataSource.vector.map(async (vector) => {
           const source =
             vector.type == 'geojson'
@@ -142,21 +143,21 @@ let map;
 
 const areaSelect = document.getElementById('area_select');
 const layerSelect = document.getElementById('layer_select');
-areaSelect.onchange = function () {
-  const area = areaSelect.value;
+areaSelect!.onchange = function () {
+  const area = (areaSelect! as any).value;
   // eslint-disable-next-line no-console
   areaSelectFunc(area * 1);
 };
-layerSelect.onchange = function () {
-  const layer = layerSelect.value;
+layerSelect!.onchange = function () {
+  const layer = (layerSelect! as any).value;
   // eslint-disable-next-line no-console
-  layerSelectFunc(layer * 1);
+  layerSelectFunc(layer * 1, false);
 };
 let areaOptions = '';
 dataSources.forEach((data, index) => {
   areaOptions = `${areaOptions}<option value="${index}">${data.area}</option>`;
 });
-areaSelect.innerHTML = areaOptions;
+areaSelect!.innerHTML = areaOptions;
 areaSelectFunc(0);
 
 function areaSelectFunc(area_id) {
@@ -164,16 +165,16 @@ function areaSelectFunc(area_id) {
   let layerOptions = '';
   areaData.raster.forEach((raster, index) => {
     layerOptions = `${layerOptions}<option value="${index}">${localeSelector(
-      raster.get('title'),
+      (raster as any).get('title'),
       'ja'
     )}</option>`;
   });
-  layerSelect.innerHTML = layerOptions;
+  layerSelect!.innerHTML = layerOptions;
   layerSelectFunc(0, true);
 }
 
 function layerSelectFunc(layer_id, clearMap) {
-  const area_id = areaSelect.value * 1;
+  const area_id = (areaSelect! as any).value * 1;
   const areaData = dataSources[area_id];
 
   const fromSource =
@@ -183,7 +184,7 @@ function layerSelectFunc(layer_id, clearMap) {
   let toCenter, toResolution, toRotation, toParam;
   if (!fromSource) {
     toParam = {
-      center: transform(centerLngLat, 'EPSG:4326', toSource.getProjection()),
+      center: transform(centerLngLat, 'EPSG:4326', (toSource as any).getProjection()),
       rotation: 0,
       zoom: 0,
     };
@@ -198,7 +199,7 @@ function layerSelectFunc(layer_id, clearMap) {
       fromResolution,
       500,
       fromSource.getProjection(),
-      toSource.getProjection()
+      (toSource as any).getProjection()
     );
     toParam = {
       center: toCenter,
@@ -207,7 +208,7 @@ function layerSelectFunc(layer_id, clearMap) {
     };
   }
   toParam = Object.assign(toParam, {
-    projection: toSource.getProjection(),
+    projection: (toSource as any).getProjection(),
     constrainRotation: false,
   });
   const view = new View(toParam);
@@ -215,10 +216,10 @@ function layerSelectFunc(layer_id, clearMap) {
   let addMapToCluster;
   const layers = areaData.vector
     ? areaData.vector.map((vector) => {
-        const source = vector.source;
+        const source = (vector as any).source;
         const filteredSource = vectorFilter(source, {
-          projectTo: toSource.getProjection(),
-          extent: toSource.getProjection().getExtent(),
+          projectTo: (toSource as any).getProjection(),
+          extent: (toSource as any).getProjection().getExtent(),
         });
         if (vector.style) {
           const clusterLayer = new clusterRegister({});
@@ -235,9 +236,9 @@ function layerSelectFunc(layer_id, clearMap) {
 
   layers.unshift(
     new WebGLTileLayer({
-      title: localeSelector(toSource.get('title'), 'ja'),
-      source: toSource,
-    })
+      title: localeSelector((toSource as any).get('title'), 'ja'),
+      source: toSource as any,
+    } as any) as any
   );
 
   if (!map) {
@@ -262,6 +263,6 @@ function layerSelectFunc(layer_id, clearMap) {
     addMapToCluster();
   }
   if (!fromSource) {
-    view.fit(toSource.getProjection().getExtent(), {padding: [50, 50, 50, 50]});
+    view.fit((toSource as any).getProjection().getExtent(), {padding: [50, 50, 50, 50]});
   }
 }

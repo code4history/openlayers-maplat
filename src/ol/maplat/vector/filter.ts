@@ -16,8 +16,8 @@ import VectorSource from 'ol/source/Vector.js';
  * @return {VectorSource} The reprojected / filtered vector source.
  */
 function filter(source, options = {}) {
-  const extent = options.extent;
-  const projectTo = options.projectTo;
+  const extent = (options as any).extent;
+  const projectTo = (options as any).projectTo;
   const retSource = new VectorSource();
   source.forEachFeature((f) => {
     const retF = f.clone();
