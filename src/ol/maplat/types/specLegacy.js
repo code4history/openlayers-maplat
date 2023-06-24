@@ -4,7 +4,6 @@
 
 /**
  * @typedef { Object } MaplatCompiledLegacy0
- * @property { string } version Version of Maplat Compiled data scheme
  * @property { Array<[Coordinate2D, Coordinate2D, (string | undefined)]> } points List of GCPs
  * @property { { BiDirectionKey: MaplatLegacyWeightBufferList } } weight_buffer Weight Buffer of each vertices
  * @property { [ Coordinate2D, Coordinate2D ] } centroid_point Centroid point of mapping
@@ -22,6 +21,12 @@
 
 /**
  * @typedef { MaplatCompiledLegacy0 } MaplatCompiledLegacy1
+ * @property { string } version Version of Maplat Compiled data scheme
+ * @property { Coordinate2D } wh Size of image (width, height)
+ */
+
+/**
+ * @typedef { MaplatCompiledLegacy0 | MaplatCompiledLegacy1 } MaplatCompiledLegacy
  * @property { Coordinate2D } wh Size of image (width, height)
  */
 
@@ -57,4 +62,9 @@
 /**
  * @typedef { MaplatSpecLegacyBase } MaplatSpecLegacy1
  * @property { MaplatLegacyCompiled1 } compiled Maplat Compiled data
+ */
+
+/**
+ * @typedef { MaplatSpecLegacy0 | MaplatSpecLegacy1 } MaplatSpecLegacy
+ * @property { Coordinate2D } wh Size of image (width, height)
  */

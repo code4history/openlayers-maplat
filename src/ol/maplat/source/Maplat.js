@@ -48,9 +48,9 @@ proj4.defs([
  * @property {number|import("ol/array").NearestDirectionFunction} [zDirection=0]
  * Choose whether to use tiles with a higher or lower zoom level when between integer
  * zoom levels. See {@link module:ol/tilegrid/TileGrid~TileGrid#getZForResolution}.
- * @property {import("@maplat/tin/lib/index.js").Compiled} [tinCompiled] Compiled data of Maplat TIN (Triangle Irregular Network) setting.
+ * @property {MaplatCompiledLegacy} [tinCompiled] Compiled data of Maplat TIN (Triangle Irregular Network) setting.
  * @property {string} [mapID] Map ID of Maplat data.
- * @property {import("@maplat/tin/lib/index.js").Options} settings Setting of Tin.
+ * @property {MaplatSpecLegacy} settings Setting of Tin.
  */
 
 /**
@@ -74,9 +74,10 @@ class Maplat extends Zoomify {
     const title = settings.title;
     // @ts-ignore
     const size = settings.width
-      ? [settings.width, settings.height]
-      : settings.compiled.wh;
-    // @ts-ignore
+      ? // @ts-ignore
+        [settings.width, settings.height]
+      : // @ts-ignore
+        settings.compiled.wh;
     const url = settings.url;
 
     //Set up Maplat TIN
@@ -92,6 +93,7 @@ class Maplat extends Zoomify {
     let maplatProjection;
     const maplatProjectionCode = `Maplat:${mapID}`;
     if (maplatProjectionStore.indexOf(maplatProjectionCode) < 0) {
+      // @ts-ignore
       const [toBase, fromBase] = !settings.version
         ? createMaplatLegacy(settings)
         : createWorldFileBase(settings);
@@ -102,13 +104,8 @@ class Maplat extends Zoomify {
         worldExtent: worldExtent,
       });
       addProjection(maplatProjection);
-      addCoordinateTransforms(
-        maplatProjection,
-        'EPSG:3857',
-        // @ts-ignore
-        toBase,
-        fromBase
-      );
+      // @ts-ignore
+      addCoordinateTransforms(maplatProjection, 'EPSG:3857', toBase, fromBase);
       addCoordinateTransforms(
         maplatProjection,
         'EPSG:4326',
@@ -161,7 +158,6 @@ class Maplat extends Zoomify {
       transition: options.transition,
     });
 
-    // @ts-ignore
     this.set('title', title);
     this.setTileUrlFunction((tileCoord) =>
       url
@@ -176,7 +172,6 @@ class Maplat extends Zoomify {
 
 function createMaplatLegacy(settings) {
   const tin = new Tin();
-  // @ts-ignore
   tin.setCompiled(settings.compiled);
 
   return [
