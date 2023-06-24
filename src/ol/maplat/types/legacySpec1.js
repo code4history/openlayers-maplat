@@ -3,8 +3,19 @@
  */
 
 /**
+ * @typedef { {[key: string]: number} } MaplatLegacyWeightBufferList
+ */
+
+/**
  * @typedef { Object } MaplatLegacyCompiled1
  * @property { string } version Version of Maplat Compiled data scheme
+ * @property { [ Coordinate2D, Coordinate2D, [string] ][] } points List of GCPs
+ * @property { { forw: MaplatLegacyWeightBufferList, bakw: MaplatLegacyWeightBufferList } } weight_buffer Weight Buffer of each vertices
+ * @property { [ Coordinate2D, Coordinate2D ] } centroid_point Centroid point of mapping
+ * @property { [ ValuesOfVertices, ValuesOfVertices ] } vertices_params Weight parameters of map vertices
+ * @property { [ Coordinate2D, Coordinate2D ][] } vertices_points Definition of vertices points
+ * @property { "strict" | "loose" | "auto" } strict_status Strict / loose status of mapping
+ * @property { (string | number)[][][] } tins_points Vertices list of triangle polygons
  */
 
 /**

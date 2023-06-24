@@ -15,6 +15,10 @@
  */
 
 /**
+ * @typedef { [number, number, number, number] } ValuesOfVertices
+ */
+
+/**
  * @typedef { "All right reserved" | "CC BY" | "CC BY-SA" | "CC BY-ND" | "CC BY-NC" | "CC BY-NC-SA" | "CC BY-NC-ND" | "CC0" } DataLicense
  */
 
