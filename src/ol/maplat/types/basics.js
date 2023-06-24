@@ -25,3 +25,15 @@
 /**
  * @typedef { DataLicense | "PD" } MapLicense
  */
+
+/**
+ * @typedef { "forw" | "bakw" } BiDirectionKey
+ */
+
+/**
+ * @typedef { string | number } EdgeIndex
+ */
+
+/**
+ * @typedef { {[key: string]: number} } MaplatLegacyWeightBufferList
+ */
