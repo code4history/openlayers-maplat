@@ -5,7 +5,7 @@
 /**
  * @typedef { Object } MaplatMetaData
  * @property { string } lang Default language
- * @property { string } mapID ID of map
+ * @property { string } [mapID] ID of map
  * @property { LocaleFragment } title Title of Map (In short)
  * @property { LocaleFragment } [officialTitle] Official Title of Map (In long)
  * @property { LocaleFragment } attr Attribution of map image
