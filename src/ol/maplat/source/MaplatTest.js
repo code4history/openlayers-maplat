@@ -1,5 +1,5 @@
 /**
- * @module ol/maplat/source/Maplat
+ * @module ol/maplat/source/MaplatTest
  */
 import Tin from '@maplat/tin/lib/index.js';
 import Zoomify from 'ol/source/Zoomify.js';
@@ -64,7 +64,7 @@ const maplatProjectionStore = [];
  * Layer source for tile data in Maplat Legacy format.
  * @api
  */
-class Maplat extends Zoomify {
+class MaplatTest extends Zoomify {
   /**
    * @param {maplatOptions} options Options.
    */
@@ -218,4 +218,4 @@ function createWorldFileBase(settings) {
   ];
 }
 
-export default Maplat;
+export default MaplatTest;
