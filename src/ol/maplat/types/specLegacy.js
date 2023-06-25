@@ -26,8 +26,7 @@
  */
 
 /**
- * @typedef { MaplatCompiledLegacy0 | MaplatCompiledLegacy1 } MaplatCompiledLegacy
- * @property { Coordinate2D } wh Size of image (width, height)
+ * @typedef { MaplatCompiledLegacy0 & MaplatCompiledLegacy1 } MaplatCompiledLegacy
  */
 
 /**
@@ -66,5 +65,4 @@
 
 /**
  * @typedef { MaplatSpecLegacy0 | MaplatSpecLegacy1 } MaplatSpecLegacy
- * @property { Coordinate2D } wh Size of image (width, height)
  */

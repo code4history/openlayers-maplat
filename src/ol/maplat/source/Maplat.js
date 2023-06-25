@@ -70,14 +70,13 @@ class Maplat extends Zoomify {
    */
   constructor(options) {
     const settings = options.settings;
-    // @ts-ignore
     const title = settings.title;
-    // @ts-ignore
-    const size = settings.width
-      ? // @ts-ignore
-        [settings.width, settings.height]
-      : // @ts-ignore
-        settings.compiled.wh;
+    /** @type {[number, number]} */
+    const size =
+      'width' in settings && 'height' in settings
+        ? [settings.width, settings.height]
+        : // @ts-ignore
+          settings.compiled.wh;
     const url = settings.url;
 
     //Set up Maplat TIN
