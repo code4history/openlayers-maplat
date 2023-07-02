@@ -122,49 +122,26 @@ class Zoomify extends TileImage {
    */
   constructor(options) {
     const size = options.size;
-    const tierSizeCalculation =
-      options.tierSizeCalculation !== undefined
-        ? options.tierSizeCalculation
-        : 'default';
 
     const tilePixelRatio = options.tilePixelRatio || 1;
     const imageWidth = size[0];
     const imageHeight = size[1];
     const tierSizeInTiles = [];
     const tileSize = options.tileSize || DEFAULT_TILE_SIZE;
-    let tileSizeForTierSizeCalculation = tileSize * tilePixelRatio;
+    const tileSizeForTierSizeCalculation = tileSize * tilePixelRatio;
 
-    switch (tierSizeCalculation) {
-      case 'default':
-        while (
-          imageWidth > tileSizeForTierSizeCalculation ||
-          imageHeight > tileSizeForTierSizeCalculation
-        ) {
-          tierSizeInTiles.push([
-            Math.ceil(imageWidth / tileSizeForTierSizeCalculation),
-            Math.ceil(imageHeight / tileSizeForTierSizeCalculation),
-          ]);
-          tileSizeForTierSizeCalculation += tileSizeForTierSizeCalculation;
-        }
-        break;
-      case 'truncated':
-        let width = imageWidth;
-        let height = imageHeight;
-        while (
-          width > tileSizeForTierSizeCalculation ||
-          height > tileSizeForTierSizeCalculation
-        ) {
-          tierSizeInTiles.push([
-            Math.ceil(width / tileSizeForTierSizeCalculation),
-            Math.ceil(height / tileSizeForTierSizeCalculation),
-          ]);
-          width >>= 1;
-          height >>= 1;
-        }
-        break;
-      default: // Unknown `tierSizeCalculation` configured
-        assert(false, 53);
-        break;
+    let width = imageWidth;
+    let height = imageHeight;
+    while (
+      width > tileSizeForTierSizeCalculation ||
+      height > tileSizeForTierSizeCalculation
+    ) {
+      tierSizeInTiles.push([
+        Math.ceil(width / tileSizeForTierSizeCalculation),
+        Math.ceil(height / tileSizeForTierSizeCalculation),
+      ]);
+      width >>= 1;
+      height >>= 1;
     }
 
     tierSizeInTiles.push([1, 1]);
