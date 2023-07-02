@@ -1,7 +1,7 @@
 import FormatGeoJSON from 'ol/format/GeoJSON.js';
 import FormatKML from 'ol/format/KML.js';
 import Map from 'ol/Map.js';
-import MaplatSource from '../src/ol/maplat/source/MaplatTest.js';
+import MaplatFactory from '../src/ol/maplat/source/MaplatFactory.js';
 import VectorLayer from 'ol/layer/Vector.js';
 import VectorSource from 'ol/source/Vector.js';
 import View from 'ol/View.js';
@@ -105,7 +105,7 @@ await Promise.all(
     if (dataSource.raster) {
       dataSource.raster = await Promise.all(
         dataSource.raster.map((url) =>
-          MaplatSource.factoryMaplatSourceFromUrl(null, url)
+          MaplatFactory.factoryMaplatSourceFromUrl(null, url)
         )
       );
     }

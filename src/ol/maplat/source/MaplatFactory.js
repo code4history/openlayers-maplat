@@ -1,5 +1,5 @@
 /**
- * @module ol/maplat/source/MaplatTest
+ * @module ol/maplat/source/MaplatFactory
  */
 import TileGrid from 'ol/tilegrid/TileGrid.js';
 import TileImage from 'ol/source/TileImage.js';
@@ -14,8 +14,6 @@ import {
   get as getProjection,
   transform,
 } from 'ol/proj.js';
-import {createFromTileUrlFunctions, expandUrl} from 'ol/tileurlfunction.js';
-import {getCenter} from 'ol/extent.js';
 import {toSize} from 'ol/size.js';
 proj4.defs([
   ['TOKYO', '+proj=longlat +ellps=bessel +towgs84=-146.336,506.832,680.254'],
@@ -200,7 +198,7 @@ class Zoomify extends TileImage {
  * Layer source for tile data in Maplat Legacy format.
  * @api
  */
-class MaplatTest extends Zoomify {
+class Maplat extends Zoomify {
   /**
    * @param {maplatOptions} options Options.
    */
@@ -274,14 +272,19 @@ class MaplatTest extends Zoomify {
       maplatProjection = getProjection(maplatProjectionCode);
     }
 
-    options.extent = extent;
-    options.projection = maplatProjection;
+    /**@type {TIOptions} */
+    const sourceOptions = options;
 
-    super(options);
+    sourceOptions.extent = extent;
+    sourceOptions.projection = maplatProjection;
+
+    super(sourceOptions);
 
     this.set('title', title);
   }
+}
 
+class MaplatFactory {
   static factoryMaplatSource(settings, options) {
     options.mapID = settings.mapID;
     options.settings = settings;
@@ -297,7 +300,7 @@ class MaplatTest extends Zoomify {
       options.url = settings.url;
     }
 
-    return new MaplatTest(options);
+    return new Maplat(options);
   }
 
   static async factoryMaplatSourceFromUrl(mapID, url, options = {}) {
@@ -367,4 +370,4 @@ function createWorldFileBase(settings) {
   ];
 }
 
-export default MaplatTest;
+export {Maplat, MaplatFactory as default};
