@@ -162,54 +162,12 @@ class Zoomify extends TileImage {
       resolutions: resolutions,
     });
 
-    let url = options.url;
-    if (url && !url.includes('{TileGroup}') && !url.includes('{tileIndex}')) {
-      url += '{TileGroup}/{z}-{x}-{y}.jpg';
-    }
-    const urls = expandUrl(url);
-
-    let tileWidth = tileSize * tilePixelRatio;
-
-    /**
-     * @param {string} template Template.
-     * @return {import("ol/Tile.js").UrlFunction} Tile URL function.
-     */
-    function createFromTemplate(template) {
-      return (
-        /**
-         * @param {import("ol/tilecoord.js").TileCoord} tileCoord Tile Coordinate.
-         * @param {number} pixelRatio Pixel ratio.
-         * @param {import("ol/proj/Projection.js").default} projection Projection.
-         * @return {string|undefined} Tile URL.
-         */
-        function (tileCoord, pixelRatio, projection) {
-          if (!tileCoord) {
-            return undefined;
-          }
-          const tileCoordZ = tileCoord[0];
-          const tileCoordX = tileCoord[1];
-          const tileCoordY = tileCoord[2];
-          const tileIndex =
-            tileCoordX + tileCoordY * tierSizeInTiles[tileCoordZ][0];
-          const tileGroup =
-            ((tileIndex + tileCountUpToTier[tileCoordZ]) / tileWidth) | 0;
-          const localContext = {
-            'z': tileCoordZ,
-            'x': tileCoordX,
-            'y': tileCoordY,
-            'tileIndex': tileIndex,
-            'TileGroup': 'TileGroup' + tileGroup,
-          };
-          return template.replace(/\{(\w+?)\}/g, function (m, p) {
-            return localContext[p];
-          });
-        }
-      );
-    }
-
-    const tileUrlFunction = createFromTileUrlFunctions(
-      urls.map(createFromTemplate)
-    );
+    const url = options.url;
+    const tileUrlFunction = (tileCoord) =>
+      url
+        .replace('{z}', `${tileCoord[0]}`)
+        .replace('{x}', `${tileCoord[1]}`)
+        .replace('{y}', `${tileCoord[2]}`);
 
     const ZoomifyTileClass = CustomTile.bind(
       null,
@@ -234,22 +192,6 @@ class Zoomify extends TileImage {
      * @type {number|import("ol/array.js").NearestDirectionFunction}
      */
     this.zDirection = options.zDirection;
-
-    // Server retina tile detection (non-standard):
-    // Try loading the center tile for the highest resolution. If it is not
-    // available, we are dealing with retina tiles, and need to adjust the
-    // tile url calculation.
-    const tileUrl = tileGrid.getTileCoordForCoordAndResolution(
-      getCenter(tileGrid.getExtent()),
-      resolutions[resolutions.length - 1]
-    );
-    const testTileUrl = tileUrlFunction(tileUrl, 1, null);
-    const image = new Image();
-    image.addEventListener('error', () => {
-      tileWidth = tileSize;
-      this.changed();
-    });
-    image.src = testTileUrl;
   }
 }
 
@@ -266,7 +208,6 @@ class MaplatTest extends Zoomify {
     const settings = options.settings;
     const title = settings.title;
     const size = options.size;
-    const url = settings.url;
 
     //Set up Maplat TIN
     const maxZoom = Math.ceil(
@@ -333,26 +274,12 @@ class MaplatTest extends Zoomify {
       maplatProjection = getProjection(maplatProjectionCode);
     }
 
-    super({
-      attributions: options.attributions,
-      cacheSize: options.cacheSize,
-      crossOrigin: options.crossOrigin,
-      interpolate: options.interpolate,
-      projection: maplatProjection,
-      extent: extent,
-      size: size,
-      url: '',
-      reprojectionErrorThreshold: options.reprojectionErrorThreshold,
-      transition: options.transition,
-    });
+    options.extent = extent;
+    options.projection = maplatProjection;
+
+    super(options);
 
     this.set('title', title);
-    this.setTileUrlFunction((tileCoord) =>
-      url
-        .replace('{z}', `${tileCoord[0]}`)
-        .replace('{x}', `${tileCoord[1]}`)
-        .replace('{y}', `${tileCoord[2]}`)
-    );
   }
 
   static factoryMaplatSource(settings, options) {
@@ -365,6 +292,9 @@ class MaplatTest extends Zoomify {
           ? [settings.width, settings.height]
           : // @ts-ignore
             settings.compiled.wh;
+    }
+    if (!options.url) {
+      options.url = settings.url;
     }
 
     return new MaplatTest(options);
