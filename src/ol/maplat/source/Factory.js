@@ -9,22 +9,26 @@ class Factory {
    * @param {import('ol/source/TileImage.js').Options} options Options for ol/source/TileImage
    * @return import('./Maplat.js').default;
    */
-  static factoryMaplatSource(settings, options) {
-    options.mapID = settings.mapID;
-    options.settings = settings;
+  static factoryMaplatSource(settings, options = {}) {
+    /** @type {import('./Maplat.js').maplatOptions} */
+    // @ts-ignore
+    const maplatOptions = options;
 
-    if (!options.size) {
-      options.size =
+    maplatOptions.mapID = settings.mapID;
+    maplatOptions.settings = settings;
+
+    if (!('size' in maplatOptions)) {
+      maplatOptions.size =
         'width' in settings && 'height' in settings
           ? [settings.width, settings.height]
           : // @ts-ignore
             settings.compiled.wh;
     }
-    if ('url' in settings) {
-      options.url = settings.url;
+    if (!('url' in maplatOptions)) {
+      maplatOptions.url = settings.url;
     }
 
-    return new Maplat(options);
+    return new Maplat(maplatOptions);
   }
 
   static async factoryMaplatSourceFromUrl(mapID, url, options = {}) {
