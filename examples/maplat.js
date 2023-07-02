@@ -18,20 +18,6 @@ import {transform} from 'ol/proj.js';
 
 const centerLngLat = [139.53671, 36.24668];
 
-const createMaplatSource = async (url) => {
-  const settingsReq = await fetch(url);
-  const settings = await settingsReq.json();
-
-  const mapDivide = url.split(/[\/\.]/);
-  const mapID = mapDivide[mapDivide.length - 2];
-  const maplatSource = new MaplatSource({
-    settings: settings,
-    mapID: mapID,
-  });
-
-  return maplatSource;
-};
-
 const createPoiSource = async (url) => {
   const vectorReq = await fetch(url);
   const vectorJSON = await vectorReq.json();
@@ -118,7 +104,9 @@ await Promise.all(
   dataSources.map(async (dataSource) => {
     if (dataSource.raster) {
       dataSource.raster = await Promise.all(
-        dataSource.raster.map((url) => createMaplatSource(url))
+        dataSource.raster.map((url) =>
+          MaplatSource.factoryMaplatSourceFromUrl(null, url)
+        )
       );
     }
     if (dataSource.vector) {

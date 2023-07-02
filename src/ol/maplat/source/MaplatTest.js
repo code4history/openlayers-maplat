@@ -2,16 +2,11 @@
  * @module ol/maplat/source/MaplatTest
  */
 import TileGrid from 'ol/tilegrid/TileGrid.js';
+import TileImage from 'ol/source/TileImage.js';
 import Tin from '@maplat/tin/lib/index.js';
+import proj4 from 'proj4';
 import {CustomTile} from 'ol/source/Zoomify.js';
 import {DEFAULT_TILE_SIZE} from 'ol/tilegrid/common.js';
-import {assert} from 'ol/asserts.js';
-import {createFromTileUrlFunctions, expandUrl} from 'ol/tileurlfunction.js';
-import {getCenter} from 'ol/extent.js';
-import {toSize} from 'ol/size.js';
-//import Zoomify from 'ol/source/Zoomify.js';
-import TileImage from 'ol/source/TileImage.js';
-import proj4 from 'proj4';
 import {
   Projection,
   addCoordinateTransforms,
@@ -19,6 +14,9 @@ import {
   get as getProjection,
   transform,
 } from 'ol/proj.js';
+import {createFromTileUrlFunctions, expandUrl} from 'ol/tileurlfunction.js';
+import {getCenter} from 'ol/extent.js';
+import {toSize} from 'ol/size.js';
 proj4.defs([
   ['TOKYO', '+proj=longlat +ellps=bessel +towgs84=-146.336,506.832,680.254'],
   ['JCP:NAD27', '+proj=longlat +ellps=clrk66 +datum=NAD27 +no_defs'],
@@ -267,12 +265,7 @@ class MaplatTest extends Zoomify {
   constructor(options) {
     const settings = options.settings;
     const title = settings.title;
-    /** @type {[number, number]} */
-    const size =
-      'width' in settings && 'height' in settings
-        ? [settings.width, settings.height]
-        : // @ts-ignore
-          settings.compiled.wh;
+    const size = options.size;
     const url = settings.url;
 
     //Set up Maplat TIN
@@ -362,7 +355,37 @@ class MaplatTest extends Zoomify {
     );
   }
 
-  //static async init(options) { }
+  static factoryMaplatSource(settings, options) {
+    options.mapID = settings.mapID;
+    options.settings = settings;
+
+    if (!options.size) {
+      options.size =
+        'width' in settings && 'height' in settings
+          ? [settings.width, settings.height]
+          : // @ts-ignore
+            settings.compiled.wh;
+    }
+
+    return new MaplatTest(options);
+  }
+
+  static async factoryMaplatSourceFromUrl(mapID, url, options = {}) {
+    const settingsReq = await fetch(url);
+    const settings = await settingsReq.json();
+
+    if (!mapID) {
+      if (settings.mapID) {
+        mapID = settings.mapID;
+      } else {
+        const mapDivide = url.split(/[\/\.]/);
+        mapID = mapDivide[mapDivide.length - 2];
+      }
+    }
+    settings.mapID = mapID;
+
+    return this.factoryMaplatSource(settings, options);
+  }
 }
 
 function createMaplatLegacy(settings) {
