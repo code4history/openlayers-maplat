@@ -1,5 +1,5 @@
 /**
- * @module ol/maplat/source/MaplatFactory
+ * @module ol/maplat/source/Maplat
  */
 import TileGrid from 'ol/tilegrid/TileGrid.js';
 import TileImage from 'ol/source/TileImage.js';
@@ -15,6 +15,7 @@ import {
   transform,
 } from 'ol/proj.js';
 import {toSize} from 'ol/size.js';
+
 proj4.defs([
   ['TOKYO', '+proj=longlat +ellps=bessel +towgs84=-146.336,506.832,680.254'],
   ['JCP:NAD27', '+proj=longlat +ellps=clrk66 +datum=NAD27 +no_defs'],
@@ -284,43 +285,6 @@ class Maplat extends Zoomify {
   }
 }
 
-class MaplatFactory {
-  static factoryMaplatSource(settings, options) {
-    options.mapID = settings.mapID;
-    options.settings = settings;
-
-    if (!options.size) {
-      options.size =
-        'width' in settings && 'height' in settings
-          ? [settings.width, settings.height]
-          : // @ts-ignore
-            settings.compiled.wh;
-    }
-    if (!options.url) {
-      options.url = settings.url;
-    }
-
-    return new Maplat(options);
-  }
-
-  static async factoryMaplatSourceFromUrl(mapID, url, options = {}) {
-    const settingsReq = await fetch(url);
-    const settings = await settingsReq.json();
-
-    if (!mapID) {
-      if (settings.mapID) {
-        mapID = settings.mapID;
-      } else {
-        const mapDivide = url.split(/[\/\.]/);
-        mapID = mapDivide[mapDivide.length - 2];
-      }
-    }
-    settings.mapID = mapID;
-
-    return this.factoryMaplatSource(settings, options);
-  }
-}
-
 function createMaplatLegacy(settings) {
   const tin = new Tin();
   tin.setCompiled(settings.compiled);
@@ -370,4 +334,4 @@ function createWorldFileBase(settings) {
   ];
 }
 
-export {Maplat, MaplatFactory as default};
+export default Maplat;
