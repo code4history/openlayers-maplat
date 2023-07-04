@@ -49,6 +49,11 @@
  * @property { string } [url] URL of template of image tile data
  * @property { string } extension String of image's extension
  * @property { Array<Object> } sub_maps Array of sub maps
+ * @property { LegacyMapType } [maptype] Type of map (Legacy)
+ * @property { number } [mercatorXShift] X shift of mercator projection
+ * @property { number } [mercatorYShift] Y shift of mercator projection
+ * @property { Array<Coordinate2D> } [envelopLngLats] Long Lat envelop of WMTS map
+ *
  */
 
 /**

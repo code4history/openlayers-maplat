@@ -39,13 +39,15 @@
  * @property { string } mapCoord Coordinate name of map
  * @property { MaplatWorldParams } [worldParams] World parameter transforming pixel to map coord
  * @property { string } interOperationCode Coordinate for coordinate inter operability
+ * @property { "TIN" | "SHIFT" | "NONE" } warp Do map image warping or not
+ * @property { [Coordinate2D, Coordinate2D] } [coordShift] Shift of map coordinate
+ * @property { Array<Coordinate2D> } [envelopLngLats] Long Lat envelop of WMTS map
  *
  */
 
 /**
  * @typedef { Object } MaplatSourceSpec
  * @property { "PIXEL" | "WMTS" | "TMS" | "IIIF" } tileSourceType Type of tile source
- * @property { "WARP" | "NONE" } warp Do map image warping or not
  * @property { string } [url] URL of template of image tile data
  * @property { string } extension String of image's extension
  *

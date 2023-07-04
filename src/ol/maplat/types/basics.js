@@ -37,3 +37,7 @@
 /**
  * @typedef { {[key: string]: number} } MaplatLegacyWeightBufferList
  */
+
+/**
+ * @typedef { "overlay" | "base" | "maplat" | "mapbox" } LegacyMapType
+ */

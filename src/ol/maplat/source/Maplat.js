@@ -16,29 +16,11 @@ import {
 } from 'ol/proj.js';
 import {toSize} from 'ol/size.js';
 
-proj4.defs([
-  ['TOKYO', '+proj=longlat +ellps=bessel +towgs84=-146.336,506.832,680.254'],
-  ['JCP:NAD27', '+proj=longlat +ellps=clrk66 +datum=NAD27 +no_defs'],
-  [
-    'JCP:ZONEA:NAD27',
-    '+proj=poly +lat_0=40.5 +lon_0=143 +x_0=914398.5307444408 +y_0=1828797.0614888816 +ellps=clrk66 +to_meter=0.9143985307444408 +no_defs',
-  ],
-  [
-    'JCP:ZONEB:NAD27',
-    '+proj=poly +lat_0=40.5 +lon_0=135 +x_0=914398.5307444408 +y_0=1828797.0614888816 +ellps=clrk66 +to_meter=0.9143985307444408 +no_defs',
-  ],
-  [
-    'JCP:ZONEC:NAD27',
-    '+proj=poly +lat_0=40.5 +lon_0=127 +x_0=914398.5307444408 +y_0=1828797.0614888816 +ellps=clrk66 +to_meter=0.9143985307444408 +no_defs',
-  ],
-]);
-
 /**
  * @typedef {'default' | 'truncated'} TierSizeCalculation
  */
 
-/**
- * @typedef {Object} maplatOptions
+/*
  * @property {import("ol/source/Source").AttributionLike} [attributions] Attributions.
  * @property {number} [cacheSize] Initial tile cache size. Will auto-grow to hold at least the number of tiles in the viewport.
  * @property {null|string} [crossOrigin] The `crossOrigin` attribute for loaded images.  Note that
@@ -69,7 +51,7 @@ proj4.defs([
 const maplatProjectionStore = [];
 
 /**
- * @typedef {Object} TIOptions
+ * @typedef {Object} Options
  * @property {import("ol/source/Source.js").AttributionLike} [attributions] Attributions.
  * @property {number} [cacheSize] Initial tile cache size. Will auto-grow to hold at least the number of tiles in the viewport.
  * @property {null|string} [crossOrigin] The `crossOrigin` attribute for loaded images.  Note that
@@ -105,6 +87,9 @@ const maplatProjectionStore = [];
  * @property {number|import("ol/array.js").NearestDirectionFunction} [zDirection=0]
  * Choose whether to use tiles with a higher or lower zoom level when between integer
  * zoom levels. See {@link module:ol/tilegrid/TileGrid~TileGrid#getZForResolution}.
+ * @property {MaplatCompiledLegacy} [tinCompiled] Compiled data of Maplat TIN (Triangle Irregular Network) setting.
+ * @property {string} [mapID] Map ID of Maplat data.
+ * @property {MaplatSpecLegacy} settings Setting of Tin.
  */
 
 /**
@@ -115,10 +100,11 @@ const maplatProjectionStore = [];
  */
 class Zoomify extends TileImage {
   /**
-   * @param {TIOptions} options Options.
+   * @param {!Options} options Maplat options.
    */
   constructor(options) {
-    const size = options.size;
+    const op = options;
+    const size = op.size;
 
     const tilePixelRatio = options.tilePixelRatio || 1;
     const imageWidth = size[0];
@@ -201,7 +187,7 @@ class Zoomify extends TileImage {
  */
 class Maplat extends Zoomify {
   /**
-   * @param {maplatOptions} options Options.
+   * @param {!Options} options Options.
    */
   constructor(options) {
     const settings = options.settings;
@@ -273,13 +259,10 @@ class Maplat extends Zoomify {
       maplatProjection = getProjection(maplatProjectionCode);
     }
 
-    /**@type {TIOptions} */
-    const sourceOptions = options;
+    options.extent = extent;
+    options.projection = maplatProjection;
 
-    sourceOptions.extent = extent;
-    sourceOptions.projection = maplatProjection;
-
-    super(sourceOptions);
+    super(options);
 
     this.set('title', title);
   }
