@@ -219,15 +219,86 @@ function createSystem2MapTransformation(settings) {
 }
 
 function createMap2WarpTransformation(settings) {
-  return [,];
+  if (!settings.version) {
+    if (
+      settings.maptype === 'base' ||
+      settings.maptype === 'overlay' ||
+      settings.maptype === 'mapbox'
+    ) {
+      if ('mercatorXShift' in settings && 'mercatorYShift' in settings) {
+        const shiftX = settings.mercatorXShift;
+        const shiftY = settings.mercatorYShift;
+        return [
+          (xy) => {
+            return [xy[0] + shiftX, xy[1] + shiftY];
+          },
+          (xy) => {
+            return [xy[0] - shiftX, xy[1] - shiftY];
+          },
+        ];
+      }
+      return [coord2Coord, coord2Coord];
+    }
+    const tin = new Tin();
+    tin.setCompiled(settings.compiled);
+    return [
+      (xy) => tin.transform([xy[0], -xy[1]], false),
+      (merc) => {
+        const xy = tin.transform(merc, true);
+        return [xy[0], -xy[1]];
+      },
+    ];
+  }
+  switch (settings.projectionSpec.warp) {
+    case 'TIN':
+      // TIN処理
+      return [coord2Coord, coord2Coord];
+    case 'SHIFT':
+      const coordShift = settings.projectionSpec.coordShift;
+      return [
+        (xy) => {
+          return [xy[0] + coordShift[0], xy[1] + coordShift[1]];
+        },
+        (xy) => {
+          return [xy[0] - coordShift[0], xy[1] - coordShift[1]];
+        },
+      ];
+    default:
+      return [coord2Coord, coord2Coord];
+  }
 }
 
 function createWarp2OperationTransformation(settings) {
-  return [,];
+  if (!settings.version) {
+
+  } 
 }
 
 function coord2Coord(xy) {
   return xy;
+}
+
+function settingsIsLegacy(settings) {
+  return !('version' in settings);
+}
+
+function settingsIsNoWarp(settings) {
+  return settingsIsLegacy(settings)
+    ? settingsIsNoWarpLegacy(settings)
+    : settingsIsNoWarpCurrent(settings);
+}
+
+function settingsIsNoWarpLegacy(settings) {
+  return (
+    (settings.maptype === 'base' ||
+      settings.maptype === 'overlay' ||
+      settings.maptype === 'mapbox') &&
+    !('mercatorXShift' in settings && 'mercatorYShift' in settings)
+  );
+}
+
+function settingsIsNoWarpCurrent(settings) {
+  return settings.projectionSpec.warp === 'NONE';
 }
 
 export default Factory;
