@@ -4,6 +4,7 @@
 import Maplat from './Maplat.js';
 import Tin from '@maplat/tin/lib/index.js';
 import proj4 from 'proj4';
+import {OSM} from 'ol/source.js';
 import {
   Projection,
   addCoordinateTransforms,
@@ -45,40 +46,25 @@ class Factory {
   static factoryMaplatSource(settings, options = {}) {
     const mapID = settings.mapID;
     options.mapID = mapID;
-    let size;
 
-    if (!('size' in options)) {
-      size =
-        'width' in settings && 'height' in settings
-          ? [settings.width, settings.height]
-          : // @ts-ignore
-            settings.compiled.wh;
-      // @ts-ignore
-      options.size = size;
-    }
     if (!('url' in options)) {
       // @ts-ignore
-      options.url = settings.url;
+      options.url = settings.sourceSpec
+        ? settings.sourceSpec.url
+        : settings.url;
     }
 
-    const maxZoom = Math.ceil(
-      Math.max(
-        Math.log2(options.size[0] / 256),
-        Math.log2(options.size[1] / 256)
-      )
-    );
-    const extent = [0, -options.size[1], options.size[0], 0];
-    const worldExtentSize = 256 * Math.pow(2, maxZoom);
-    const worldExtent = [0, -worldExtentSize, worldExtentSize, 0];
-    options.extent = extent;
-    options.worldExtent = worldExtent;
+    //const extent = [0, -options.size[1], options.size[0], 0];
+    //const worldExtentSize = 256 * Math.pow(2, options.maxZoom);
+    //const worldExtent = [0, -worldExtentSize, worldExtentSize, 0];
+    //options.extent = extent;
+    //options.worldExtent = worldExtent;
 
     //Set up Maplat projection
-    let maplatProjection;
-    const maplatProjectionCode = decideProjectionName(settings);
+    const maplatProjection = decideProjection(settings, options);
     if (
-      maplatProjectionCode !== 'EPSG:3857' &&
-      maplatProjectionStore.indexOf(maplatProjectionCode) < 0
+      maplatProjection.getCode() !== 'EPSG:3857' &&
+      maplatProjectionStore.indexOf(maplatProjection.getCode()) < 0
     ) {
       const [toSystemFromMapTransform, fromSystemToMapTransform] =
         createSystem2MapTransformation(settings);
@@ -101,15 +87,15 @@ class Factory {
           return xy;
         },
       ];
-      maplatProjection = new Projection({
-        code: maplatProjectionCode,
-        units: 'pixels',
-        extent: extent,
-        worldExtent: worldExtent,
-      });
+
       addProjection(maplatProjection);
       // @ts-ignore
-      addCoordinateTransforms(maplatProjection, 'EPSG:3857', toBase, fromBase);
+      addCoordinateTransforms(
+        maplatProjection,
+        'EPSG:3857',
+        toOperationCoord,
+        fromOperationCoord
+      );
       addCoordinateTransforms(
         maplatProjection,
         'EPSG:4326',
@@ -144,14 +130,19 @@ class Factory {
             )
         );
       });
-      maplatProjectionStore.push(maplatProjectionCode);
-    } else {
-      maplatProjection = getProjection(maplatProjectionCode);
+      maplatProjectionStore.push(maplatProjection.getCode());
     }
 
-
-
-    return new Maplat(options);
+    options.projection = maplatProjection;
+    const source =
+      maplatProjection.getUnits() === 'pixels'
+        ? new Maplat(options)
+        : new OSM(options);
+    source.set(
+      'title',
+      settings.metaData ? settings.metaData.title : settings.title
+    );
+    return source;
   }
 
   /**
@@ -179,27 +170,57 @@ class Factory {
   }
 }
 
-function decideProjectionName(settings) {
+function decideProjection(settings, options) {
   const projName = `Maplat:${settings.mapID}`;
-  if (!settings.version) {
-    if (
-      settings.maptype === 'base' ||
-      settings.maptype === 'overlay' ||
-      settings.maptype === 'mapbox'
-    ) {
-      return 'EPSG:3857';
+  let projSelect = 'PIXEL';
+  if (settingsIsLegacy(settings)) {
+    if (settingsIs3857OnLegacy(settings)) {
+      options.maxZoom = settings.maxZoom;
+      projSelect = settingsIsNoWarpOnLegacy3857(settings) ? '3857' : '3857+';
     }
-    return projName;
+  } else if (settingsIs3857(settings)) {
+    options.maxZoom = settings.maxZoom;
+    projSelect = settingsIsNoWarp(settings) ? '3857' : '3857+';
   }
-  if (
-    settings.projectionSpec.mapCoord === 'EPSG:3857' &&
-    (settings.sourceSpec.tileSourceType === 'WMTS' ||
-      settings.sourceSpec.tileSourceType === 'TMS') &&
-    settings.projectionSpec.warp === 'NONE'
-  ) {
-    return 'EPSG:3857';
+  switch (projSelect) {
+    case '3857':
+      return getProjection('EPSG:3857');
+    case '3857+':
+      return new Projection({
+        code: projName,
+        units: 'm',
+        extent: [
+          -20037508.342789244, -20037508.342789244, 20037508.342789244,
+          20037508.342789244,
+        ],
+        worldExtent: [-180, -85, 180, 85],
+      });
+    default:
+      if (!('size' in options)) {
+        options.size =
+          'projectionSpec' in settings
+            ? settings.projectionSpec.size
+            : 'width' in settings && 'height' in settings
+            ? [settings.width, settings.height]
+            : // @ts-ignore
+              settings.compiled.wh;
+      }
+      options.maxZoom = Math.ceil(
+        Math.max(
+          Math.log2(options.size[0] / 256),
+          Math.log2(options.size[1] / 256)
+        )
+      );
+      const extent = [0, -options.size[1], options.size[0], 0];
+      const worldExtentSize = 256 * Math.pow(2, options.maxZoom);
+      const worldExtent = [0, -worldExtentSize, worldExtentSize, 0];
+      return new Projection({
+        code: projName,
+        units: 'pixels',
+        extent: extent,
+        worldExtent: worldExtent,
+      });
   }
-  return projName;
 }
 
 function createSystem2MapTransformation(settings) {
@@ -283,9 +304,9 @@ function createWarp2OperationTransformation(settings) {
   if (projectionSpec.mapCoord === 'PIXEL') {
     return [coord2Coord, coord2Coord];
   }
-  if (projectionSpec.mapCoord.match(/^(JCP:ZONE[ABC]:NAD27)/)) {
+  if (projectionSpec.mapCoord.match(/^(JCP:ZONE[ABC])/)) {
     const zone = RegExp.$1;
-    const map2nad = proj4(zone, 'JCP:NAD27');
+    const map2nad = proj4(`${zone}:NAD27`, 'JCP:NAD27');
     const tky2merc = proj4('TOKYO', 'EPSG:3857');
     return [
       (xy) => {
@@ -342,6 +363,15 @@ function settingsIs3857OnLegacy(settings) {
 
 function settingsIsNoWarpOnLegacy3857(settings) {
   return !('mercatorXShift' in settings && 'mercatorYShift' in settings);
+}
+
+function settingsIs3857(settings) {
+  return (
+    settings.projectionSpec &&
+    settings.projectionSpec.mapCoord === 'EPSG:3857' &&
+    (settings.sourceSpec.tileSourceType === 'WMTS' ||
+      settings.sourceSpec.tileSourceType === 'TMS')
+  );
 }
 
 function settingsIsNoWarp(settings) {

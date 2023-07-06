@@ -3,17 +3,8 @@
  */
 import TileGrid from 'ol/tilegrid/TileGrid.js';
 import TileImage from 'ol/source/TileImage.js';
-import Tin from '@maplat/tin/lib/index.js';
-import proj4 from 'proj4';
 import {CustomTile} from 'ol/source/Zoomify.js';
 import {DEFAULT_TILE_SIZE} from 'ol/tilegrid/common.js';
-import {
-  Projection,
-  addCoordinateTransforms,
-  addProjection,
-  get as getProjection,
-  transform,
-} from 'ol/proj.js';
 import {toSize} from 'ol/size.js';
 
 /**
@@ -43,12 +34,6 @@ import {toSize} from 'ol/size.js';
  * @property {string} [mapID] Map ID of Maplat data.
  * @property {MaplatSpecLegacy} settings Setting of Tin.
  */
-
-/**
- * @private
- * @type {Array<string>}
- */
-const maplatProjectionStore = [];
 
 /**
  * @typedef {Object} Options
@@ -98,7 +83,7 @@ const maplatProjectionStore = [];
  * Imaging Protocol are supported).
  * @api
  */
-class Zoomify extends TileImage {
+class Maplat extends TileImage {
   /**
    * @param {!Options} options Maplat options.
    */
@@ -178,143 +163,6 @@ class Zoomify extends TileImage {
      */
     this.zDirection = options.zDirection;
   }
-}
-
-/**
- * @classdesc
- * Layer source for tile data in Maplat Legacy format.
- * @api
- */
-class Maplat extends Zoomify {
-  /**
-   * @param {!Options} options Options.
-   */
-  constructor(options) {
-    const settings = options.settings;
-    const title = settings.title;
-    const size = options.size;
-
-    //Set up Maplat TIN
-    const maxZoom = Math.ceil(
-      Math.max(Math.log2(size[0] / 256), Math.log2(size[1] / 256))
-    );
-    const extent = [0, -size[1], size[0], 0];
-    const worldExtentSize = 256 * Math.pow(2, maxZoom);
-    const worldExtent = [0, -worldExtentSize, worldExtentSize, 0];
-    const mapID = options.mapID;
-
-    //Set up Maplat projection
-    let maplatProjection;
-    const maplatProjectionCode = `Maplat:${mapID}`;
-    if (maplatProjectionStore.indexOf(maplatProjectionCode) < 0) {
-      // @ts-ignore
-      const [toBase, fromBase] = !settings.version
-        ? createMaplatLegacy(settings)
-        : createWorldFileBase(settings);
-      maplatProjection = new Projection({
-        code: maplatProjectionCode,
-        units: 'pixels',
-        extent: extent,
-        worldExtent: worldExtent,
-      });
-      addProjection(maplatProjection);
-      // @ts-ignore
-      addCoordinateTransforms(maplatProjection, 'EPSG:3857', toBase, fromBase);
-      addCoordinateTransforms(
-        maplatProjection,
-        'EPSG:4326',
-        (xy) =>
-          transform(
-            transform(xy, maplatProjection, 'EPSG:3857'),
-            'EPSG:3857',
-            'EPSG:4326'
-          ),
-        (lnglat) =>
-          transform(
-            transform(lnglat, 'EPSG:4326', 'EPSG:3857'),
-            'EPSG:3857',
-            maplatProjection
-          )
-      );
-      maplatProjectionStore.forEach((projectionCode) => {
-        addCoordinateTransforms(
-          maplatProjection,
-          projectionCode,
-          (xy) =>
-            transform(
-              transform(xy, maplatProjection, 'EPSG:3857'),
-              'EPSG:3857',
-              projectionCode
-            ),
-          (xy) =>
-            transform(
-              transform(xy, projectionCode, 'EPSG:3857'),
-              'EPSG:3857',
-              maplatProjection
-            )
-        );
-      });
-      maplatProjectionStore.push(maplatProjectionCode);
-    } else {
-      maplatProjection = getProjection(maplatProjectionCode);
-    }
-
-    options.extent = extent;
-    options.projection = maplatProjection;
-
-    super(options);
-
-    this.set('title', title);
-  }
-}
-
-function createMaplatLegacy(settings) {
-  const tin = new Tin();
-  tin.setCompiled(settings.compiled);
-
-  return [
-    (xy) => tin.transform([xy[0], -xy[1]], false),
-    (merc) => {
-      const xy = tin.transform(merc, true);
-      return [xy[0], -xy[1]];
-    },
-  ];
-}
-
-function createWorldFileBase(settings) {
-  const mapCoordParams = settings.mapCoordParams;
-  const a = mapCoordParams.xScale;
-  const b = mapCoordParams.xRotation;
-  const c = mapCoordParams.xOrigin;
-  const d = mapCoordParams.yRotation;
-  const e = mapCoordParams.yScale;
-  const f = mapCoordParams.yOrigin;
-  const toMapCoord = (xy) => {
-    return [a * xy[0] - b * xy[1] + c, d * xy[0] - e * xy[1] + f];
-  };
-  const fromMapCoord = (xy) => {
-    return [
-      (xy[0] * e - xy[1] * b - c * e + f * b) / (a * e - b * d),
-      -(xy[1] * a - xy[0] * d - f * a + c * d) / (a * e - b * d),
-    ];
-  };
-
-  const map2nad = proj4('JCP:ZONEB:NAD27', 'JCP:NAD27');
-  const tky2merc = proj4('TOKYO', 'EPSG:3857');
-  return [
-    (xy) => {
-      const mapCoord = toMapCoord(xy);
-      const tokyo = map2nad.forward(mapCoord);
-      const merc = tky2merc.forward(tokyo);
-      return merc;
-    },
-    (merc) => {
-      const tokyo = tky2merc.inverse(merc);
-      const mapCoord = map2nad.inverse(tokyo);
-      const xy = fromMapCoord(mapCoord);
-      return xy;
-    },
-  ];
 }
 
 export default Maplat;
