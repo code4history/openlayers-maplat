@@ -87,9 +87,20 @@ class Factory {
       const [toWarpFromOperationTransform, fromWarpToOperationTransform] =
         createWarp2OperationTransformation(settings);
 
-      const [toBase, fromBase] = !settings.version
-        ? createMaplatLegacy(settings)
-        : createWorldFileBase(settings);
+      const [toOperationCoord, fromOperationCoord] = [
+        (xy) => {
+          const mapCoord = toSystemFromMapTransform(xy);
+          const warpCoord = toMapFromWarpTransformation(mapCoord);
+          const operationCoord = toWarpFromOperationTransform(warpCoord);
+          return operationCoord;
+        },
+        (operationCoord) => {
+          const warpCoord = fromWarpToOperationTransform(operationCoord);
+          const mapCoord = fromMapToWarpTransformation(warpCoord);
+          const xy = fromSystemToMapTransform(mapCoord);
+          return xy;
+        },
+      ];
       maplatProjection = new Projection({
         code: maplatProjectionCode,
         units: 'pixels',
@@ -192,10 +203,10 @@ function decideProjectionName(settings) {
 }
 
 function createSystem2MapTransformation(settings) {
-  if (!settings.version) {
+  if (settingsIsLegacy(settings)) {
     return [coord2Coord, coord2Coord];
   }
-  if (settings.projectionSpec.worldParams) {
+  if (settingsHasWorldParams(settings)) {
     const worldParams = settings.projectionSpec.worldParams;
     const a = worldParams.xScale;
     const b = worldParams.xRotation;
@@ -219,13 +230,9 @@ function createSystem2MapTransformation(settings) {
 }
 
 function createMap2WarpTransformation(settings) {
-  if (!settings.version) {
-    if (
-      settings.maptype === 'base' ||
-      settings.maptype === 'overlay' ||
-      settings.maptype === 'mapbox'
-    ) {
-      if ('mercatorXShift' in settings && 'mercatorYShift' in settings) {
+  if (settingsIsLegacy(settings)) {
+    if (settingsIs3857OnLegacy(settings)) {
+      if (settingsIsNoWarpOnLegacy3857(settings)) {
         const shiftX = settings.mercatorXShift;
         const shiftY = settings.mercatorYShift;
         return [
@@ -269,9 +276,52 @@ function createMap2WarpTransformation(settings) {
 }
 
 function createWarp2OperationTransformation(settings) {
-  if (!settings.version) {
-
-  } 
+  if (settingsIsLegacy(settings)) {
+    return [coord2Coord, coord2Coord];
+  }
+  const projectionSpec = settings.projectionSpec;
+  if (projectionSpec.mapCoord === 'PIXEL') {
+    return [coord2Coord, coord2Coord];
+  }
+  if (projectionSpec.mapCoord.match(/^(JCP:ZONE[ABC]:NAD27)/)) {
+    const zone = RegExp.$1;
+    const map2nad = proj4(zone, 'JCP:NAD27');
+    const tky2merc = proj4('TOKYO', 'EPSG:3857');
+    return [
+      (xy) => {
+        const tokyo = map2nad.forward(xy);
+        const merc = tky2merc.forward(tokyo);
+        return merc;
+      },
+      (merc) => {
+        const tokyo = tky2merc.inverse(merc);
+        const xy = map2nad.inverse(tokyo);
+        return xy;
+      },
+    ];
+  }
+  if (projectionSpec.mapCoord.match(/^EPSG:\d+$/)) {
+    const epsg = projectionSpec.mapCoord;
+    if (!proj4.defs(epsg)) {
+      if (projectionSpec.mapCoordText) {
+        proj4.defs(epsg, projectionSpec.mapCoordText);
+      } else {
+        throw new Error(`Unsupported projection by proj4: ${epsg}`);
+      }
+    }
+    const map2merc = proj4(epsg, 'EPSG:3857');
+    return [
+      (xy) => {
+        const merc = map2merc.forward(xy);
+        return merc;
+      },
+      (merc) => {
+        const xy = map2merc.inverse(merc);
+        return xy;
+      },
+    ];
+  }
+  throw new Error(`Cannot handle projection: ${projectionSpec.mapCoord}`);
 }
 
 function coord2Coord(xy) {
@@ -282,23 +332,24 @@ function settingsIsLegacy(settings) {
   return !('version' in settings);
 }
 
-function settingsIsNoWarp(settings) {
-  return settingsIsLegacy(settings)
-    ? settingsIsNoWarpLegacy(settings)
-    : settingsIsNoWarpCurrent(settings);
-}
-
-function settingsIsNoWarpLegacy(settings) {
+function settingsIs3857OnLegacy(settings) {
   return (
-    (settings.maptype === 'base' ||
-      settings.maptype === 'overlay' ||
-      settings.maptype === 'mapbox') &&
-    !('mercatorXShift' in settings && 'mercatorYShift' in settings)
+    settings.maptype === 'base' ||
+    settings.maptype === 'overlay' ||
+    settings.maptype === 'mapbox'
   );
 }
 
-function settingsIsNoWarpCurrent(settings) {
-  return settings.projectionSpec.warp === 'NONE';
+function settingsIsNoWarpOnLegacy3857(settings) {
+  return !('mercatorXShift' in settings && 'mercatorYShift' in settings);
+}
+
+function settingsIsNoWarp(settings) {
+  return settings.projectionSpec && settings.projectionSpec.warp === 'NONE';
+}
+
+function settingsHasWorldParams(settings) {
+  return settings.projectionSpec && settings.projectionSpec.worldParams;
 }
 
 export default Factory;
