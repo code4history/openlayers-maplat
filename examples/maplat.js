@@ -65,6 +65,8 @@ const dataSources = [
       'https://s.maplat.jp/r/tatebayashimap/maps/tatebayashi_ojozu.json',
       'https://s.maplat.jp/r/tatebayashimap/maps/tatebayashi_castle_akimoto.json',
       'https://s.maplat.jp/r/tatebayashimap/maps/tatebayashi_satonuma_village_1.json',
+      'data/maplat/kanto_rapid-900913.json',
+      'data/maplat/osm.json',
     ],
     vector: [
       {

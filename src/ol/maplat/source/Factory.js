@@ -4,7 +4,6 @@
 import Maplat from './Maplat.js';
 import Tin from '@maplat/tin/lib/index.js';
 import proj4 from 'proj4';
-import {OSM} from 'ol/source.js';
 import {
   Projection,
   addCoordinateTransforms,
@@ -12,6 +11,7 @@ import {
   get as getProjection,
   transform,
 } from 'ol/proj.js';
+import {XYZ} from 'ol/source.js';
 
 proj4.defs([
   ['TOKYO', '+proj=longlat +ellps=bessel +towgs84=-146.336,506.832,680.254'],
@@ -53,12 +53,6 @@ class Factory {
         ? settings.sourceSpec.url
         : settings.url;
     }
-
-    //const extent = [0, -options.size[1], options.size[0], 0];
-    //const worldExtentSize = 256 * Math.pow(2, options.maxZoom);
-    //const worldExtent = [0, -worldExtentSize, worldExtentSize, 0];
-    //options.extent = extent;
-    //options.worldExtent = worldExtent;
 
     //Set up Maplat projection
     const maplatProjection = decideProjection(settings, options);
@@ -137,7 +131,7 @@ class Factory {
     const source =
       maplatProjection.getUnits() === 'pixels'
         ? new Maplat(options)
-        : new OSM(options);
+        : new XYZ(options);
     source.set(
       'title',
       settings.metaData ? settings.metaData.title : settings.title
@@ -254,18 +248,18 @@ function createMap2WarpTransformation(settings) {
   if (settingsIsLegacy(settings)) {
     if (settingsIs3857OnLegacy(settings)) {
       if (settingsIsNoWarpOnLegacy3857(settings)) {
-        const shiftX = settings.mercatorXShift;
-        const shiftY = settings.mercatorYShift;
-        return [
-          (xy) => {
-            return [xy[0] + shiftX, xy[1] + shiftY];
-          },
-          (xy) => {
-            return [xy[0] - shiftX, xy[1] - shiftY];
-          },
-        ];
+        return [coord2Coord, coord2Coord];
       }
-      return [coord2Coord, coord2Coord];
+      const shiftX = settings.mercatorXShift;
+      const shiftY = settings.mercatorYShift;
+      return [
+        (xy) => {
+          return [xy[0] + shiftX, xy[1] + shiftY];
+        },
+        (xy) => {
+          return [xy[0] - shiftX, xy[1] - shiftY];
+        },
+      ];
     }
     const tin = new Tin();
     tin.setCompiled(settings.compiled);
