@@ -3,7 +3,9 @@
  */
 
 /**
- * @typedef { Object } MaplatCompiledLegacy0
+ * @typedef { Object } MaplatCompiledLegacy
+ * @property { string } [version] Version of Maplat Compiled data scheme (New)
+ * @property { Coordinate2D } [wh] Size of image (width, height) (New)
  * @property { Array<[Coordinate2D, Coordinate2D, (string | undefined)]> } points List of GCPs
  * @property { { BiDirectionKey: MaplatLegacyWeightBufferList } } weight_buffer Weight Buffer of each vertices
  * @property { [ Coordinate2D, Coordinate2D ] } centroid_point Centroid point of mapping
@@ -14,23 +16,39 @@
  * @property { "follow" | "invert" } yaxisMode Direction of Y axis
  * @property { "plain" | "birdeye" } vertexMode Vertex location estimation mode
  * @property { "strict" | "auto" | "loose" } strictMode Strict / loose mode of mapping
- * @property { Coordinate2D } wh Size of image (width, height)
  * @property { Array<[Array<Coordinate2D>, Array<Coordinate2D>, [EdgeIndex, EdgeIndex]]> } edges Edges of mapping
  * @property { Array<[Coordinate2D, Coordinate2D]> } edgesNodes Nodes of edges
  */
 
 /**
- * @typedef { MaplatCompiledLegacy0 } MaplatCompiledLegacy1
- * @property { string } version Version of Maplat Compiled data scheme
- * @property { Coordinate2D } wh Size of image (width, height)
+ * @typedef { Object } GeoJSONPolygonGeometry
+ * @property { "Polygon" } type Type of GeoJSON geometry
+ * @property { Array<Array<Coordinate2D>> } coordinates Coordinates of GeoJSON geometry
  */
 
 /**
- * @typedef { MaplatCompiledLegacy0 & MaplatCompiledLegacy1 } MaplatCompiledLegacy
+ * @typedef { Object } GeoJSONPolygonFeature
+ * @property { "Feature" } type Type of GeoJSON
+ * @property { Object<string,Object> } properties Properties of GeoJSON
+ * @property { GeoJSONPolygonGeometry } geometry Geometry of GeoJSON
  */
 
 /**
- * @typedef { Object } MaplatSpecLegacyBase
+ * @typedef { MaplatCompiledLegacy } MaplatSubMapCompiledLegacy
+ * @property { Coordinate2D } xy Origin of submap (x, y)
+ * @property { Array<Coordinate2D> } bounds Node list of boundary of submap
+ * @property { GeoJSONPolygonFeature } boundsPolygon Polygon of Boundary of submap
+ */
+
+/**
+ * @typedef { Object } MaplatSubMapLegacy
+ * @property { number } priority Priority of sub map
+ * @property { number } importance Importance of sub map
+ * @property { MaplatSubMapCompiledLegacy } compiled Maplat Compiled data
+ */
+
+/**
+ * @typedef { Object } MaplatSpecLegacy
  * @property { LocaleFragment } title Title of Map (In short)
  * @property { LocaleFragment } [officialTitle] Official Title of Map (In long)
  * @property { LocaleFragment } attr Attribution of map image
@@ -48,26 +66,12 @@
  * @property { string } [mapID] ID of map
  * @property { string } [url] URL of template of image tile data
  * @property { string } extension String of image's extension
- * @property { Array<Object> } sub_maps Array of sub maps
+ * @property { Array<MaplatSubMapLegacy> } sub_maps Array of sub maps
  * @property { LegacyMapType } [maptype] Type of map (Legacy)
  * @property { number } [mercatorXShift] X shift of mercator projection
  * @property { number } [mercatorYShift] Y shift of mercator projection
  * @property { Array<Coordinate2D> } [envelopLngLats] Long Lat envelop of WMTS map
- *
- */
-
-/**
- * @typedef { MaplatSpecLegacyBase } MaplatSpecLegacy0
- * @property { MaplatLegacyCompiled0 } compiled Maplat Compiled data
- * @property { number } width Width of image
- * @property { number } height Height of image
- */
-
-/**
- * @typedef { MaplatSpecLegacyBase } MaplatSpecLegacy1
- * @property { MaplatLegacyCompiled1 } compiled Maplat Compiled data
- */
-
-/**
- * @typedef { MaplatSpecLegacy0 | MaplatSpecLegacy1 } MaplatSpecLegacy
+ * @property { MaplatCompiledLegacy } compiled Maplat Compiled data
+ * @property { number } [width] Width of image (Old)
+ * @property { number } [height] Height of image (Old)
  */

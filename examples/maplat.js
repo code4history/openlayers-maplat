@@ -101,6 +101,10 @@ const dataSources = [
       'data/maplat/txu-oclc-6565467.json',
     ],
   },
+  {
+    area: '延岡',
+    raster: ['data/maplat/1932_nobeoka.json'],
+  },
 ];
 await Promise.all(
   dataSources.map(async (dataSource) => {
@@ -169,6 +173,7 @@ function layerSelectFunc(layer_id, clearMap) {
   const fromSource =
     clearMap || !map ? null : map.getLayers().getArray()[0].getSource();
   const toSource = areaData.raster[layer_id];
+  console.log(toSource.getProjection());
 
   let toCenter, toResolution, toRotation, toParam;
   if (!fromSource) {

@@ -12,6 +12,7 @@ import {
   transform,
 } from 'ol/proj.js';
 import {XYZ} from 'ol/source.js';
+import {polygon} from '@turf/helpers';
 
 proj4.defs([
   ['TOKYO', '+proj=longlat +ellps=bessel +towgs84=-146.336,506.832,680.254'],
@@ -55,78 +56,10 @@ class Factory {
     }
 
     //Set up Maplat projection
-    const maplatProjection = decideProjection(settings, options);
-    if (
-      maplatProjection.getCode() !== 'EPSG:3857' &&
-      maplatProjectionStore.indexOf(maplatProjection.getCode()) < 0
-    ) {
-      const [toSystemFromMapTransform, fromSystemToMapTransform] =
-        createSystem2MapTransformation(settings);
-      const [toMapFromWarpTransformation, fromMapToWarpTransformation] =
-        createMap2WarpTransformation(settings);
-      const [toWarpFromOperationTransform, fromWarpToOperationTransform] =
-        createWarp2OperationTransformation(settings);
-
-      const [toOperationCoord, fromOperationCoord] = [
-        (xy) => {
-          const mapCoord = toSystemFromMapTransform(xy);
-          const warpCoord = toMapFromWarpTransformation(mapCoord);
-          const operationCoord = toWarpFromOperationTransform(warpCoord);
-          return operationCoord;
-        },
-        (operationCoord) => {
-          const warpCoord = fromWarpToOperationTransform(operationCoord);
-          const mapCoord = fromMapToWarpTransformation(warpCoord);
-          const xy = fromSystemToMapTransform(mapCoord);
-          return xy;
-        },
-      ];
-
-      addProjection(maplatProjection);
-      // @ts-ignore
-      addCoordinateTransforms(
-        maplatProjection,
-        'EPSG:3857',
-        toOperationCoord,
-        fromOperationCoord
-      );
-      addCoordinateTransforms(
-        maplatProjection,
-        'EPSG:4326',
-        (xy) =>
-          transform(
-            transform(xy, maplatProjection, 'EPSG:3857'),
-            'EPSG:3857',
-            'EPSG:4326'
-          ),
-        (lnglat) =>
-          transform(
-            transform(lnglat, 'EPSG:4326', 'EPSG:3857'),
-            'EPSG:3857',
-            maplatProjection
-          )
-      );
-      maplatProjectionStore.forEach((projectionCode) => {
-        addCoordinateTransforms(
-          maplatProjection,
-          projectionCode,
-          (xy) =>
-            transform(
-              transform(xy, maplatProjection, 'EPSG:3857'),
-              'EPSG:3857',
-              projectionCode
-            ),
-          (xy) =>
-            transform(
-              transform(xy, projectionCode, 'EPSG:3857'),
-              'EPSG:3857',
-              maplatProjection
-            )
-        );
-      });
-      maplatProjectionStore.push(maplatProjection.getCode());
-    }
-
+    const createdProjection = createProjection(settings, options);
+    const maplatProjection = Array.isArray(createdProjection)
+      ? createdProjection[0]
+      : createdProjection;
     options.projection = maplatProjection;
     const source =
       maplatProjection.getUnits() === 'pixels'
@@ -164,8 +97,128 @@ class Factory {
   }
 }
 
-function decideProjection(settings, options) {
-  const projName = `Maplat:${settings.mapID}`;
+function createProjection(settings, options, subNum) {
+  const maplatProjection = decideProjection(settings, options, subNum);
+  if (
+    maplatProjection.getCode() !== 'EPSG:3857' &&
+    maplatProjectionStore.indexOf(maplatProjection.getCode()) < 0
+  ) {
+    const [toSystemFromMapTransform, fromSystemToMapTransform] =
+      createSystem2MapTransformation(settings);
+    const [toMapFromWarpTransformation, fromMapToWarpTransformation] =
+      createMap2WarpTransformation(settings);
+    const [toWarpFromOperationTransform, fromWarpToOperationTransform] =
+      createWarp2OperationTransformation(settings);
+
+    const [toOperationCoord, fromOperationCoord] = [
+      (xy) => {
+        const mapCoord = toSystemFromMapTransform(xy);
+        const warpCoord = toMapFromWarpTransformation(mapCoord);
+        const operationCoord = toWarpFromOperationTransform(warpCoord);
+        return operationCoord;
+      },
+      (operationCoord) => {
+        const warpCoord = fromWarpToOperationTransform(operationCoord);
+        const mapCoord = fromMapToWarpTransformation(warpCoord);
+        const xy = fromSystemToMapTransform(mapCoord);
+        return xy;
+      },
+    ];
+
+    addProjection(maplatProjection);
+    // @ts-ignore
+    addCoordinateTransforms(
+      maplatProjection,
+      'EPSG:3857',
+      toOperationCoord,
+      fromOperationCoord
+    );
+    addCoordinateTransforms(
+      maplatProjection,
+      'EPSG:4326',
+      (xy) =>
+        transform(
+          transform(xy, maplatProjection, 'EPSG:3857'),
+          'EPSG:3857',
+          'EPSG:4326'
+        ),
+      (lnglat) =>
+        transform(
+          transform(lnglat, 'EPSG:4326', 'EPSG:3857'),
+          'EPSG:3857',
+          maplatProjection
+        )
+    );
+    maplatProjectionStore.forEach((projectionCode) => {
+      addCoordinateTransforms(
+        maplatProjection,
+        projectionCode,
+        (xy) =>
+          transform(
+            transform(xy, maplatProjection, 'EPSG:3857'),
+            'EPSG:3857',
+            projectionCode
+          ),
+        (xy) =>
+          transform(
+            transform(xy, projectionCode, 'EPSG:3857'),
+            'EPSG:3857',
+            maplatProjection
+          )
+      );
+    });
+    maplatProjectionStore.push(maplatProjection.getCode());
+  }
+
+  let returnProjs;
+  if (settings.sub_maps) {
+    returnProjs = settings.sub_maps.map((subMap, index) => {
+      const subSettings = Object.assign(
+        {
+          mapID: settings.mapID,
+        },
+        subMap
+      );
+      const retProj = createProjection(subSettings, options, index + 1);
+      //retProj.set('priority', subSettings.priority);
+      //retProj.set('importance', subSettings.importance);
+      return retProj;
+    });
+    returnProjs.unshift(maplatProjection);
+  }
+  if (maplatProjection.getUnits() !== 'pixels') {
+    if (settings.envelopeLngLats) {
+      const lnglats = settings.envelopeLngLats.concat([settings.envelopeLngLats[0]]);
+      const coords3857 = lnglats.map((lnglat) => {
+        return transform(lnglat, 'EPSG:4326', 'EPSG:3857');
+      });
+      maplatProjection.mercBoundary = polygon([coords3857]);
+    }
+  } else {
+    if (settings.boundsPolygon) {
+      maplatProjection.pixelBoundary = settings.boundsPolygon;
+    } else {
+      const xys = [
+        [0, 0],
+        [options.size[0], 0],
+        options.size,
+        [0, options.size[1]],
+        [0, 0],
+      ];
+      maplatProjection.pixelBoundary = polygon([xys]);
+    }
+    maplatProjection.mercBoundary = polygon([
+      maplatProjection.pixelBoundary.geometry.coordinates[0].map((xy) => {
+        return transform(xy, maplatProjection, 'EPSG:3857');
+      }),
+    ]);
+  }
+
+  return returnProjs ? returnProjs : maplatProjection;
+}
+
+function decideProjection(settings, options, subNum = 0) {
+  const projName = `Maplat:${settings.mapID}${subNum ? `#${subNum}` : ''}`;
   let projSelect = 'PIXEL';
   if (settingsIsLegacy(settings)) {
     if (settingsIs3857OnLegacy(settings)) {
@@ -176,11 +229,13 @@ function decideProjection(settings, options) {
     options.maxZoom = settings.maxZoom;
     projSelect = settingsIsNoWarp(settings) ? '3857' : '3857+';
   }
+  let returnProj;
   switch (projSelect) {
     case '3857':
-      return getProjection('EPSG:3857');
+      returnProj = getProjection('EPSG:3857');
+      break;
     case '3857+':
-      return new Projection({
+      returnProj = new Projection({
         code: projName,
         units: 'm',
         extent: [
@@ -189,6 +244,7 @@ function decideProjection(settings, options) {
         ],
         worldExtent: [-180, -85, 180, 85],
       });
+      break;
     default:
       if (!('size' in options)) {
         options.size =
@@ -208,13 +264,15 @@ function decideProjection(settings, options) {
       const extent = [0, -options.size[1], options.size[0], 0];
       const worldExtentSize = 256 * Math.pow(2, options.maxZoom);
       const worldExtent = [0, -worldExtentSize, worldExtentSize, 0];
-      return new Projection({
+      returnProj = new Projection({
         code: projName,
         units: 'pixels',
         extent: extent,
         worldExtent: worldExtent,
       });
   }
+
+  return returnProj;
 }
 
 function createSystem2MapTransformation(settings) {
