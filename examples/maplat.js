@@ -15,8 +15,13 @@ import {Icon, Style} from 'ol/style.js';
 import {altKeyOnly} from 'ol/events/condition.js';
 import {defaults} from 'ol/interaction/defaults.js';
 import {transform} from 'ol/proj.js';
+import manifesto from 'manifesto.js';
 
 const centerLngLat = [139.53671, 36.24668];
+
+const mani = await manifesto.loadManifest("https://dl.ndl.go.jp/api/iiif/2542527/manifest.json");
+console.log(mani);
+// https://www.digital.archives.go.jp/api/iiif/001891961.tif/full/full/0/native.jpg/info.json
 
 const createPoiSource = async (url) => {
   const vectorReq = await fetch(url);
@@ -98,12 +103,19 @@ const dataSources = [
     area: '姫路',
     raster: [
       'https://s.maplat.jp/r/himejimap/maps/Jissoku_Himeji_Shigai.json',
-      'data/maplat/txu-oclc-6565467.json',
+      'data/maplat/txu-oclc-6565467.json'
     ],
   },
   {
     area: '延岡',
     raster: ['data/maplat/1932_nobeoka.json'],
+  },
+  {
+    area: '種子島',
+    raster: [
+      'data/maplat/iiif_test.json',
+      'data/maplat/osm.json'
+    ],
   },
 ];
 await Promise.all(

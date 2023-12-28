@@ -4,6 +4,7 @@
 import Maplat from './Maplat.js';
 import Tin from '@maplat/tin/lib/index.js';
 import proj4 from 'proj4';
+import proj4List from 'proj4-list';
 import {
   Projection,
   addCoordinateTransforms,
@@ -11,8 +12,10 @@ import {
   get as getProjection,
   transform,
 } from 'ol/proj.js';
-import {XYZ} from 'ol/source.js';
+import {XYZ, IIIF} from 'ol/source.js';
+import IIIFInfo from 'ol/format/IIIFInfo.js';
 import {polygon} from '@turf/helpers';
+import manifesto from 'manifesto.js';
 
 proj4.defs([
   ['TOKYO', '+proj=longlat +ellps=bessel +towgs84=-146.336,506.832,680.254'],
@@ -41,32 +44,47 @@ class Factory {
   /**
    * @param {MaplatDefinition | MaplatSpecLegacy} settings Settings of Maplat
    * @param {import('./Maplat.js').Options} options Options for ol/source/TileImage
-   * @return {import('./Maplat.js').default} Maplat instance
+   * @return {Promise<import('./Maplat.js').default>} Maplat instance
    */
   // @ts-ignore
-  static factoryMaplatSource(settings, options = {}) {
+  static async factoryMaplatSource(settings, options = {}) {
     const mapID = settings.mapID;
     options.mapID = mapID;
+    let SourceClass;
 
-    if (!('url' in options)) {
-      // @ts-ignore
-      options.url = settings.sourceSpec
-        ? settings.sourceSpec.url
+    // IIIFの場合、IIIF用のoptionsを取得
+    // @ts-ignore
+    if (settings.sourceSpec && settings.sourceSpec.tileSourceType === 'IIIF') { 
+      SourceClass = IIIF;
+      delete options.url;               // @ts-ignore
+      const manifest = await manifesto.loadManifest(settings.sourceSpec.url);                   // @ts-ignore
+      if (manifest.sequences && manifest.sequences[0] && manifest.sequences[0].canvases) {
+        // @ts-ignore
+        const infoUrl = `${manifest.sequences[0].canvases[settings.sourceSpec.iiifNumber || 0].images[0].resource.service['@id']}/info.json`;
+        const infoObj = await (await fetch(infoUrl)).json();
+        const iiifOption = new IIIFInfo(infoObj).getTileSourceOptions();
+        if (iiifOption === undefined || iiifOption.version === undefined) throw new Error('Invalid Image setting in IIIF settings');
+        options = Object.assign(options, iiifOption);
+      } else {
+        throw new Error('Invalid IIIF settings');
+      }
+    } else if(!('url' in options)) {    // @ts-ignore
+      options.url = settings.sourceSpec // @ts-ignore
+        ? settings.sourceSpec.url       // @ts-ignore
         : settings.url;
     }
 
-    //Set up Maplat projection
+    // Set up Maplat projection
     const createdProjection = createProjection(settings, options);
     const maplatProjection = Array.isArray(createdProjection)
       ? createdProjection[0]
       : createdProjection;
     options.projection = maplatProjection;
-    const source =
-      maplatProjection.getUnits() === 'pixels'
-        ? new Maplat(options)
-        : new XYZ(options);
+    if (!SourceClass) SourceClass = maplatProjection.getUnits() === 'pixels' ? Maplat : XYZ;
+    const source = new SourceClass(options);
+    console.log(source);
     source.set(
-      'title',
+      'title',                          // @ts-ignore
       settings.metaData ? settings.metaData.title : settings.title
     );
     return source;
@@ -97,30 +115,41 @@ class Factory {
   }
 }
 
+// Maplat定義の投影系を作成
 function createProjection(settings, options, subNum) {
   const maplatProjection = decideProjection(settings, options, subNum);
   if (
     maplatProjection.getCode() !== 'EPSG:3857' &&
     maplatProjectionStore.indexOf(maplatProjection.getCode()) < 0
   ) {
-    const [toSystemFromMapTransform, fromSystemToMapTransform] =
+    // ピクセル座標と投影系座標間の変換関数を作成
+    const [fromSystemToMapTransform, toSystemFromMapTransform] =
       createSystem2MapTransformation(settings);
-    const [toMapFromWarpTransformation, fromMapToWarpTransformation] =
+    // 投影座標内でのワーピング処理用の変換関数を作成
+    const [fromMapToWarpTransformation, toMapFromWarpTransformation] =
       createMap2WarpTransformation(settings);
-    const [toWarpFromOperationTransform, fromWarpToOperationTransform] =
+    // 他のMaplat定義との変換処理用座標との変換関数を作成
+    const [fromWarpToOperationTransform, toWarpFromOperationTransform] =
       createWarp2OperationTransformation(settings);
 
+    // ピクセル座標と他のMaplat定義との変換処理用座標との変換定義
     const [toOperationCoord, fromOperationCoord] = [
       (xy) => {
-        const mapCoord = toSystemFromMapTransform(xy);
-        const warpCoord = toMapFromWarpTransformation(mapCoord);
-        const operationCoord = toWarpFromOperationTransform(warpCoord);
+        // ピクセル座標から、投影系座標に変換
+        const mapCoord = fromSystemToMapTransform(xy);
+        // 投影系座標上でのワーピング変換
+        const warpCoord = fromMapToWarpTransformation(mapCoord);
+        // 他のMaplat定義との変換処理用座標への変換
+        const operationCoord = fromWarpToOperationTransform(warpCoord);
         return operationCoord;
       },
       (operationCoord) => {
-        const warpCoord = fromWarpToOperationTransform(operationCoord);
-        const mapCoord = fromMapToWarpTransformation(warpCoord);
-        const xy = fromSystemToMapTransform(mapCoord);
+        // 他のMaplat定義との変換処理用座標からの変換
+        const warpCoord = toWarpFromOperationTransform(operationCoord);
+        // ワーピング結果からの投影系座標への変換
+        const mapCoord = toMapFromWarpTransformation(warpCoord);
+        // 投影系座標からピクセル座標への変換
+        const xy = toSystemFromMapTransform(mapCoord);
         return xy;
       },
     ];
@@ -220,7 +249,7 @@ function createProjection(settings, options, subNum) {
 function decideProjection(settings, options, subNum = 0) {
   const projName = `Maplat:${settings.mapID}${subNum ? `#${subNum}` : ''}`;
   let projSelect = 'PIXEL';
-  if (settingsIsLegacy(settings)) {
+  if (settingsIsLegacy(settings)) { // レガシーの場合
     if (settingsIs3857OnLegacy(settings)) {
       options.maxZoom = settings.maxZoom;
       projSelect = settingsIsNoWarpOnLegacy3857(settings) ? '3857' : '3857+';
@@ -275,11 +304,14 @@ function decideProjection(settings, options, subNum = 0) {
   return returnProj;
 }
 
+// ピクセル座標と投影系座標間の変換関数を作成
 function createSystem2MapTransformation(settings) {
-  if (settingsIsLegacy(settings)) {
+  // レガシーの場合、そのまま流す
+  if (settingsIsLegacy(settings)) { 
     return [coord2Coord, coord2Coord];
   }
-  if (settingsHasWorldParams(settings)) {
+  // ワールドファイル設定がある場合、それを元にピクセル座標から投影系座標へ
+  if (settingsHasWorldParams(settings)) { 
     const worldParams = settings.projectionSpec.worldParams;
     const a = worldParams.xScale;
     const b = worldParams.xRotation;
@@ -302,8 +334,11 @@ function createSystem2MapTransformation(settings) {
   return [coord2Coord, coord2Coord];
 }
 
+// 投影座標内でのワーピング処理用の変換関数を作成
 function createMap2WarpTransformation(settings) {
+  // レガシーの場合、MaplatTinなどでの処理を行う
   if (settingsIsLegacy(settings)) {
+    // レガシーかつ3857の場合、メルカトルシフトがある場合はそれを適用
     if (settingsIs3857OnLegacy(settings)) {
       if (settingsIsNoWarpOnLegacy3857(settings)) {
         return [coord2Coord, coord2Coord];
@@ -319,6 +354,7 @@ function createMap2WarpTransformation(settings) {
         },
       ];
     }
+    // MaplatTinでの処理
     const tin = new Tin();
     tin.setCompiled(settings.compiled);
     return [
@@ -348,14 +384,18 @@ function createMap2WarpTransformation(settings) {
   }
 }
 
+// 他のMaplat定義との変換処理用座標（3857）との変換関数を作成
 function createWarp2OperationTransformation(settings) {
-  if (settingsIsLegacy(settings)) {
+  // レガシーの場合、3857ベースになっているので、そのまま流す
+  if (settingsIsLegacy(settings)) { 
     return [coord2Coord, coord2Coord];
   }
   const projectionSpec = settings.projectionSpec;
+  // ピクセル座標の場合、ワープの時点で3857になっているので、そのまま流す
   if (projectionSpec.mapCoord === 'PIXEL') {
     return [coord2Coord, coord2Coord];
   }
+  // Japan City Planの場合、NAD27に変換してからその値をTokyoとみなし、3857に変換
   if (projectionSpec.mapCoord.match(/^(JCP:ZONE[ABC])/)) {
     const zone = RegExp.$1;
     const map2nad = proj4(`${zone}:NAD27`, 'JCP:NAD27');
@@ -373,13 +413,16 @@ function createWarp2OperationTransformation(settings) {
       },
     ];
   }
+  // その他の投影系の場合、3857に変換する
   if (projectionSpec.mapCoord.match(/^EPSG:\d+$/)) {
     const epsg = projectionSpec.mapCoord;
     if (!proj4.defs(epsg)) {
       if (projectionSpec.mapCoordText) {
         proj4.defs(epsg, projectionSpec.mapCoordText);
+      } else if (proj4List[epsg]) {
+        proj4.defs(epsg, proj4List[epsg][1]);
       } else {
-        throw new Error(`Unsupported projection by proj4: ${epsg}`);
+        throw new Error(`Unsupported projection by proj4 and proj4-list: ${epsg}`);
       }
     }
     const map2merc = proj4(epsg, 'EPSG:3857');
@@ -401,6 +444,7 @@ function coord2Coord(xy) {
   return xy;
 }
 
+// データのバージョンが　設定のルートにない場合、レガシーとみなす
 function settingsIsLegacy(settings) {
   return !('version' in settings);
 }

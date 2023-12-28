@@ -49,7 +49,8 @@
  * @typedef { Object } MaplatSourceSpec
  * @property { "PIXEL" | "WMTS" | "TMS" | "IIIF" } tileSourceType Type of tile source
  * @property { string } [url] URL of template of image tile data
- * @property { string } extension String of image's extension
+ * @property { string } [extension] String of image's extension
+ * @property { number } [iiifNumber] Target number of IIIF images set 
  *
  */
 
